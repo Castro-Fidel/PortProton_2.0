@@ -328,6 +328,11 @@ init_wine_ver () {
         export WINEDLLPATH+=":${PATH_TO_GAME}"
     fi
 
+    if [ ! -z "${PATH}" ]
+    then export PATH="${WINEDIR}/bin:${PATH}"
+    else export PATH="${WINEDIR}/bin"
+    fi
+
     if [[ -d "${WINEDIR}/files" && ! -d "${WINEDIR}/dist" ]] ; then
         for clear_dist_files in `ls "${WINEDIR}" | sed -e "s/^files$//g" | sed -e "s/^version$//g"` ; do 
             rm -fr "${WINEDIR}/$clear_dist_files"
@@ -389,104 +394,6 @@ init_wine_ver () {
     return 0
 }
 
-pw_init_runtime () {
-
-    if [[ -n "$(grep "ROSA Fresh" "/etc/os-release")" ]] ; then
-        export LOCPATH="/run/host/usr/share/locale/"
-    elif [[ -n "$(grep "altlinux" "/etc/os-release")" ]] ; then
-        export LIBGL_DRIVERS_PATH="/usr/lib/X11/modules/dri:/usr/lib64/X11/modules/dri"
-    fi
-
-    PW_PV_OVERRIDES="/usr/lib/pressure-vessel/overrides/lib" 
-    export PW_LD_LIBRARY_PATH="${WINEDIR}/lib64:${WINEDIR}/lib:${PW_WINELIB}/portable/lib/lib64:${PW_WINELIB}/portable/lib/lib32:${PW_PV_OVERRIDES}/x86_64-linux-gnu/aliases:${PW_PV_OVERRIDES}/i386-linux-gnu/aliases"
-
-    export PW_VK_LAYER_PATH="${PW_WINELIB}/portable/share/vulkan/implicit_layer.d"
-
-    if [ ! -z ${PATH_TMP} ]
-    then export PATH="${PATH_TMP}"
-    else export PATH_TMP="${PATH}"
-    fi
-    if [ ! -z "${PATH}" ]
-    then export PATH="${WINEDIR}/bin:${PATH}:${PW_WINELIB}/portable/bin"
-    else export PATH="${WINEDIR}/bin:${PW_WINELIB}/portable/bin"
-    fi
-
-    if [ "${PW_USE_GSTREAMER}" = 1 ] ; then 
-        if [ -d "${WINEDIR}/lib64/gstreamer-1.0" ] ; then
-            export GST_PLUGIN_SYSTEM_PATH_1_0="${WINEDIR}/lib64/gstreamer-1.0:${WINEDIR}/lib/gstreamer-1.0"
-        elif [ -d "${PW_WINELIB}/portable/lib/lib64/gstreamer-1.0" ] ; then
-            export GST_PLUGIN_SYSTEM_PATH_1_0="${PW_WINELIB}/portable/lib/lib64/gstreamer-1.0:${PW_WINELIB}/portable/lib/lib32/gstreamer-1.0"
-        fi
-        export WINE_GST_REGISTRY_DIR="${PORT_WINE_TMP_PATH}"
-        export MEDIACONV_AUDIO_DUMP_FILE="${PORT_WINE_TMP_PATH}"/audio.foz
-        export MEDIACONV_AUDIO_TRANSCODED_FILE="${PORT_WINE_TMP_PATH}"/transcoded_audio.foz
-        export MEDIACONV_VIDEO_DUMP_FILE="${PORT_WINE_TMP_PATH}"/video.foz
-        export MEDIACONV_VIDEO_TRANSCODED_FILE="${PORT_WINE_TMP_PATH}"/transcoded_video.foz
-    else
-        var_winedlloverride_update "winegstreamer="
-    fi
-
-    if [[ ! -z "${PW_SANDBOX_HOME_PATH}" && -d "${PW_SANDBOX_HOME_PATH}" ]] ; then
-        export pw_runtime="${PW_WINELIB}/pressure-vessel/bin/pressure-vessel-unruntime \
-        --unshare-home \
-        --home="${PW_SANDBOX_HOME_PATH}" \
-        ${PW_ADD_TO_ARGS_IN_RUNTIME} --"
-    else
-        export pw_runtime="${PW_WINELIB}/pressure-vessel/bin/pressure-vessel-unruntime \
-        --share-home \
-        ${PW_ADD_TO_ARGS_IN_RUNTIME} --"
-    fi
-
-    export PRESSURE_VESSEL_IMPORT_VULKAN_LAYERS=0
-    # export PRESSURE_VESSEL_GRAPHICS_PROVIDER="/"
-
-    unset PRESSURE_VESSEL_RUNTIME_ARCHIVE
-    export PRESSURE_VESSEL_COPY_RUNTIME=1
-    export PRESSURE_VESSEL_GC_LEGACY_RUNTIMES=1
-    export PRESSURE_VESSEL_RUNTIME=runtime
-    export PRESSURE_VESSEL_RUNTIME_BASE="${PW_WINELIB}"
-    export PRESSURE_VESSEL_VARIABLE_DIR="${PW_WINELIB}/var"
-    export PRESSURE_VESSEL_PREFIX="${PW_WINELIB}/pressure-vessel"
-
-    unset PRESSURE_VESSEL_FILESYSTEMS_RO PRESSURE_VESSEL_FILESYSTEMS_RW
-    for PWRTMRO in ${PW_RT_MOUNT_RO[*]} ; do
-        if [ ! -z "${PRESSURE_VESSEL_FILESYSTEMS_RO}" ]
-        then export PRESSURE_VESSEL_FILESYSTEMS_RO="${PRESSURE_VESSEL_FILESYSTEMS_RO}:${PWRTMRO}"
-        else export PRESSURE_VESSEL_FILESYSTEMS_RO="${PWRTMRO}"
-        fi
-    done
-    for PWRTMRW in ${PW_RT_MOUNT_RW[*]} ; do
-        if [ ! -z "${PRESSURE_VESSEL_FILESYSTEMS_RW}" ]
-        then export PRESSURE_VESSEL_FILESYSTEMS_RW="${PRESSURE_VESSEL_FILESYSTEMS_RW}:${PWRTMRW}"
-        else export PRESSURE_VESSEL_FILESYSTEMS_RW="${PWRTMRW}"
-        fi
-    done
-    echo "RUNTIME is enabled"
-}
-
-pw_mangohud_check () {
-    if [[ "${PW_MANGOHUD}" == "1" ]] || [[ "${PW_MANGOHUD_x32}" = "1" ]]; then
-        export PW_MANGOHUD_SLR='MANGOHUD=1'
-        MANGOHUD_LIB_NAME="libMangoHud.so"
-        if [[ "${PW_VULKAN_USE}" = "0" ]] ; then 
-	        MANGOHUD_LIB_NAME="libMangoHud_dlsym.so:${MANGOHUD_LIB_NAME}"
-        fi
-        if [[ ! -z "${PW_LD_PRELOAD}" ]]
-        then export PW_LD_PRELOAD="${PW_LD_PRELOAD}:${MANGOHUD_LIB_NAME}"
-        else export PW_LD_PRELOAD="${MANGOHUD_LIB_NAME}"
-        fi
-        var_vk_istance_layers_config_update "VK_LAYER_MANGOHUD_overlay64"
-        if [[ "${PW_MANGOHUD_x32}" = "1" ]] ; then 
-            var_vk_istance_layers_config_update "VK_LAYER_MANGOHUD_overlay32"
-        fi
-        print_info "MANGOHUD is enabled"
-    else
-        export PW_MANGOHUD_SLR='DISABLE_MANGOHUD=1'
-        print_info "MANGOHUD is disabled"
-    fi
-    return 0
-}
-
 pw_vkbasalt_check () {
     if [[ "${ENABLE_VKBASALT}" == 1 ]] && [[ "${PW_VULKAN_USE}" != "0" ]] && [[ "${PW_VULKAN_USE}" != "3" ]] ; then
         if [[ -z "${PW_VKBASALT_EFFECTS}" ]] ; then
@@ -498,21 +405,13 @@ pw_vkbasalt_check () {
         fi
         sed -ri "s/casSharpness .*/casSharpness = ${PW_VKBASALT_FFX_CAS}/g" "${PORT_WINE_PATH}/data/vkBasalt.conf"
         export VKBASALT_CONFIG_FILE="${PORT_WINE_PATH}/data/vkBasalt.conf"
-        var_vk_istance_layers_config_update "VK_LAYER_VKBASALT_post_processing64:VK_LAYER_VKBASALT_post_processing32"
+        export ENABLE_VKBASALT=1
         print_info "vkBasalt is enabled"
     else
-        export DISABLE_VKBASALT=1
+        export ENABLE_VKBASALT=0
         print_info "vkBasalt is disabled"
     fi
     return 0
-}
-
-check_nvidia_vk_icd_file () {
-    if [[ -f "/usr/share/vulkan/icd.d/nvidia_icd.json" ]] ; then
-        export VK_ICD_FILENAMES="/usr/share/vulkan/icd.d/nvidia_icd.json"
-    elif [[ -f "/etc/vulkan/icd.d/nvidia_icd.json" ]] ; then
-        export VK_ICD_FILENAMES="/etc/vulkan/icd.d/nvidia_icd.json"
-    fi
 }
 
 regdlloverrides () {
@@ -605,51 +504,15 @@ stop_portwine () {
     kill_portwine &&
     try_remove_dir "${PW_WINELIB}/var"
     find "${PORT_WINE_PATH}/data/prefixes/${PW_PREFIX_NAME}/drive_c/" -maxdepth 1 -type f -name "*.tmp" -delete
-    if [ ! -z "`pgrep -a yad_new | grep "\-\-notification" | awk '{print $1}'`" ] ; then
-        kill -s SIGUSR1 "`pgrep -a yad_new | grep "\-\-notification" | awk '{print $1}'`" 2>/dev/null
+    if [ ! -z "`pgrep -a yad | grep "\-\-notification" | awk '{print $1}'`" ] ; then
+        kill -s SIGUSR1 "`pgrep -a yad | grep "\-\-notification" | awk '{print $1}'`" 2>/dev/null
     fi
     add_in_stop_portwine #&>/dev/null
-    kill -n 9 `pgrep -a start.sh | grep -i '/PortProton/' | awk '{print $1}'` > /dev/null 2>&1
-    killall yad_new &>/dev/null
+    kill -9 `pgrep -a start.sh | grep -i '/PortProton/' | awk '{print $1}'` > /dev/null 2>&1
+    killall yad &>/dev/null
     exit 0
 }
 export -f stop_portwine
-
-pw_download_libs () {
-    if [ ! -z "`ls ${PORT_WINE_TMP_PATH} | grep libs_v | grep -v libs${PW_LIBS_VER}`" ] ; then
-        for RM_LIBS in `ls ${PORT_WINE_TMP_PATH} | grep libs_v | grep -v libs${PW_LIBS_VER}`
-        do try_remove_dir "${PORT_WINE_TMP_PATH}/${RM_LIBS}"
-        done
-        pw_clear_pfx
-    fi
-    if [[ ! -e "${PW_WINELIB}/portable/bin/yad" || ! -e "${PW_WINELIB}/portable/lib/p7zip/7z" \
-    || ! -e "${PW_WINELIB}/runtime/files/bin/vkcube" || -e "${PORT_WINE_TMP_PATH}/libs${PW_LIBS_VER}.tar.xz" ]] ;
-    then
-        print_info "Download and install libraries..."
-        if try_download "github.com/Castro-Fidel/PortWINE/releases/download/libs${PW_LIBS_VER}/libs${PW_LIBS_VER}.tar.xz" "${PORT_WINE_TMP_PATH}/libs${PW_LIBS_VER}.tar.xz" ; then
-            if unpack_tar_xz "${PORT_WINE_TMP_PATH}/libs${PW_LIBS_VER}.tar.xz" "${PORT_WINE_TMP_PATH}/" ; then
-                try_remove_file "${PORT_WINE_TMP_PATH}/libs${PW_LIBS_VER}.tar.xz"
-            else
-                try_remove_dir "${PORT_WINE_TMP_PATH}/libs${PW_LIBS_VER}"
-                try_remove_file "${PORT_WINE_TMP_PATH}/libs${PW_LIBS_VER}.tar.xz"
-                zenity_error_download && pw_download_libs
-            fi
-        else
-            zenity_error_download && pw_download_libs
-        fi
-    fi
-    export pw_yad="${PW_WINELIB}/portable/bin/yad"
-    export pw_yad_new="${PW_WINELIB}/portable/bin/yad_new"
-    export pw_zstd="${PW_WINELIB}/portable/bin/zstd"
-    export pw_7z="${PW_WINELIB}/portable/lib/p7zip/7z"
-    if [ -x "`which xterm 2>/dev/null`" ]; then
-        export SYS_XTERM=`which xterm`
-        export PW_XTERM="${SYS_XTERM} -geometry 159x37 -e"
-    else
-        export PW_XTERM="${PW_WINELIB}/runtime/files/bin/xterm -geometry 159x37 -e"
-    fi
-    return 0
-}
 
 pw_check_and_download_wine () {
     [ ! -d "${PORT_WINE_PATH}/data/dist/" ] && create_new_dir "${PORT_WINE_PATH}/data/dist"
@@ -772,7 +635,6 @@ pw_init_db () {
         export PORTWINE_DB=`echo "${portwine_exe}" | awk -F '/' 'NF>1{print $NF}' | sed s/".exe"/""/gi`
         if [[ -f "${portwine_exe}".ppdb ]] && [[ "${PORTWINE_DB}" != "RiotClientServices" ]] ; then
             export PORTWINE_DB_FILE="${portwine_exe}".ppdb
-            # sed -i 's/ PP_/ PW_/g' "${PORTWINE_DB_FILE}"
             . "${PORTWINE_DB_FILE}"
             if [[ -z "`ls -p "${PORT_WINE_PATH}/prefixes/" | grep -e "^${PW_PREFIX_NAME}/"`" ]] ; then
                 export PW_PREFIX_NAME=`echo "${portwine_exe}" | awk -F"/prefixes/" '{print $2}' | awk -F"/" '{print $1}'`
@@ -791,7 +653,7 @@ pw_init_db () {
                         export ADD_CB_DBFILE="${PW_CHECK_DB_FILE}!${ADD_CB_DBFILE}"
                     fi
                 done
-                PORTWINE_DB_FILE=`"${pw_yad_new}" --text-align=center --text "${PW_SELECTION_DB_LOC}" --borders=15 --form --center  \
+                PORTWINE_DB_FILE=`yad --text-align=center --text "${PW_SELECTION_DB_LOC}" --borders=15 --form --center  \
                 --title "Database file selection..." --window-icon="$PW_GUI_ICON_PATH/port_proton.png"  --form --separator="" \
                 --field="DB FILE: :CB" "${ADD_CB_DBFILE}"`
                 if [[ "$?" == "1" || "$?" == "252" ]] ; then exit 0 ; fi
@@ -840,11 +702,11 @@ pw_port_update () {
         print_info "Scripts version in github = ${scripts_current_ver}"
         print_info "Scripts version local = ${scripts_install_ver}"
         if [[ ! -z "${scripts_current_ver}" ]] &&  [[ "${scripts_current_ver}" -gt "${scripts_install_ver}" ]] ; then
-            if [[ -f "${PW_WINELIB}/portable/bin/yad_new" ]] ; then
-                export pw_yad_new="${PW_WINELIB}/portable/bin/yad_new"
+            if [[ -f "${PW_WINELIB}/portable/bin/yad" ]] ; then
+                export pw_yad="${PW_WINELIB}/portable/bin/yad"
                 curl -s --list-only "https://raw.githubusercontent.com/Castro-Fidel/PortWINE/master/data_from_portwine/${PW_CHANGELOG_FILE}" | tee "${PORT_WINE_TMP_PATH}/curent_var_ver" | sszen
                 CHANGLOG_NEWS=`cat "${PORT_WINE_TMP_PATH}/curent_var_ver" | sed "/Scripts version ${scripts_install_ver}/,$ d" | sed '1,/---/ d' `
-                xcsd=`"${pw_yad_new}" --title "${scripts_upd2} v.${scripts_current_ver}" --window-icon="$PW_GUI_ICON_PATH/port_proton.png" \
+                xcsd=`yad --title "${scripts_upd2} v.${scripts_current_ver}" --window-icon="$PW_GUI_ICON_PATH/port_proton.png" \
                 --borders=5 --form --separator='%%%' --width=1000 --height=350 --center \
                 --field=":TXT" "${CHANGLOG_NEWS}" \
                 --field="   ${scripts_upd3} :CB" "${scripts_upd4}!${scripts_upd5}!${scripts_upd6}" `
@@ -873,7 +735,7 @@ pw_port_update () {
                             try_remove_file "${PORT_WINE_TMP_PATH}/PortWINE-master.tar.gz"
                             try_remove_dir "${PORT_WINE_TMP_PATH}/PortWINE-master/"
                             echo "${scripts_current_ver}" > "${PORT_WINE_TMP_PATH}/scripts_ver"
-                            if [[ -z "${pw_yad_new}" ]] ; then
+                            if [[ -z yad ]] ; then
                                 zenity --title="Changelog" --text-info --width=1200 --height=550 \
                                 --filename="${PORT_WINE_PATH}/data/${PW_CHANGELOG_FILE}"
                             fi 
@@ -988,7 +850,7 @@ pw_find_exe () {
     done < "${PORT_WINE_TMP_PATH}/tmp_yad_find_exe"
 
     OrigIFS="$IFS" && IFS=%
-    PW_SET_FIND_EXE="$("${pw_yad_new}" --height="300" --width="1000" --center --list \
+    PW_SET_FIND_EXE="$(yad --height="300" --width="1000" --center --list \
     --text-align=center --window-icon="$PW_GUI_ICON_PATH/port_proton.png" --title "Create shortcut for..." \
     --text="\n${loc_gui_create_shortcut_for_exe}" --column="path to .exe file:" ${FIND_TO_GUI})"
     YAD_STATUS="$?"

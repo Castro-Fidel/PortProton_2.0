@@ -19,10 +19,7 @@ if [[ $(id -u) = 0 ]] ; then
     zenity --error --text "Do not run this script as root!"
     exit 1
 fi
-if [[ "${s_install}" != "1" && ! -x "`which "zenity" 2>/dev/null`" ]] ; then
-    echo "You will need to install: zenity, and restart the port."
-    xdg-open "https://linux-gaming.ru/portproton/" > /dev/null 2>&1 & exit 0
-fi
+
 . "$(dirname $(readlink -f "$0"))/functions_helper"
 
 start_portwine () {
@@ -57,8 +54,6 @@ start_portwine () {
         cp -f "${PORT_SCRIPTS_PATH}/.Xresources" "${HOME}"
         xrdb -merge "${HOME}/.Xresources"
     fi
-
-    pw_init_runtime
 
     if [[ ! -z "${PW_LOG}" && "${PW_LOG}" != 0 ]] ; then
         export WINEDEBUG="fixme-all,err+loaddll,err+dll,err+file,err+reg"
@@ -155,10 +150,6 @@ start_portwine () {
         export WINE_HIDE_NVIDIA_GPU=1
     fi
 
-    if [[ ! -z "${PW_PRIME_RENDER_OFFLOAD}" && "${PW_PRIME_RENDER_OFFLOAD}" != 0 ]] ; then
-        export __NV_PRIME_RENDER_OFFLOAD=1
-        check_nvidia_vk_icd_file
-    fi
     if [[ ! -z "${PW_HEAP_DELAY_FREE}" && "${PW_HEAP_DELAY_FREE}" != 0 ]]
     then export WINE_HEAP_DELAY_FREE="1"
     else export WINE_HEAP_DELAY_FREE="0"
@@ -173,40 +164,17 @@ start_portwine () {
     fi
     
     [[ ! -z "${PW_MANGOHUD_USER_CONF}" && "${PW_MANGOHUD_USER_CONF}" != 0 ]] && unset MANGOHUD_CONFIG
+
     if [[ ! -z "${PW_USE_DXR11}" && "${PW_USE_DXR11}" != 0 ]] ; then 
         var_vkd3d_config_update dxr11
         var_radv_perftest_config_update rt,gpl
-        export VKD3D_FEATURE_LEVEL=12_1
+        export VKD3D_FEATURE_LEVEL=12_2
     elif [[ ! -z "${PW_USE_DXR10}" && "${PW_USE_DXR10}" != 0 ]] ; then 
         var_vkd3d_config_update dxr
         var_radv_perftest_config_update rt,gpl
-        export VKD3D_FEATURE_LEVEL=12_1
+        export VKD3D_FEATURE_LEVEL=12_2
     fi
-    export optirun_on=""
-    export check_optimus_manager=
-    export PW_NVIDIA="$(lspci | grep NVIDIA)"
-    if [ -x "`which optimus-manager 2>/dev/null`" ]; then
-        export check_optimus_manager=`optimus-manager --status | grep Current | cut -f 2 -d':' | sed -e 's/^[[:space:]]*//'`
-    fi
-    if [[ ! -z "${PW_NVIDIA}" ]] && [[ "${check_optimus_manager}" != "intel" ]] && [[ "${DRI_PRIME}" != 1 ]] ; then
-        if [ "${check_optimus_manager}" = "nvidia" ]; then
-            check_nvidia_vk_icd_file
-        elif [ -x "`which primusrun 2>/dev/null`" ]; then
-            export optirun_on="primusrun"
-            check_nvidia_vk_icd_file
-        elif [ -x "`which optirun 2>/dev/null`" ]; then
-            export optirun_on="optirun -b primus"
-            check_nvidia_vk_icd_file
-        elif [ -x "`which prime-run 2>/dev/null`" ]; then
-            export optirun_on="prime-run"
-            check_nvidia_vk_icd_file
-        elif [[ -x "`which nvidia-settings 2>/dev/null`" ]] ; then 
-            export __GLX_VENDOR_LIBRARY_NAME=nvidia
-            check_nvidia_vk_icd_file
-        fi
-    else
-        export DRI_PRIME=1
-    fi
+ 
     case "$PW_FORCE_USE_VSYNC" in  # 0-FORCE_OFF, 1-FORCE_ON, 2-BY_DEFAULT
         "0")
         unset vblank_mode
@@ -228,11 +196,11 @@ start_portwine () {
     fi
     if [[ -x "`which "gamemoderun" 2>/dev/null`" ]] && [[ "$PW_USE_GAMEMODE" = "1" ]] ; then
         export GAMEMODERUN=1
-        PW_GAMEMODERUN_SLR="gamemoderun"
-        systemctl enable --now --user gamemoded &>/dev/null
+        PW_GAMEMODERUN_EXEC="gamemoderun"
         echo "Gamemod will be launched."
     else
         export GAMEMODERUN=0
+        PW_GAMEMODERUN_EXEC=""
         echo "Gamemod is not installed or disabled in vars script or db file: PW_USE_GAMEMODE=$PW_USE_GAMEMODE"
     fi
     pw_other_fixes
@@ -285,12 +253,12 @@ start_portwine () {
         if [[ -f "${PW_WINELIB}/default_pfx.tar.xz" ]] ; then
             unpack_tar_xz "${PW_WINELIB}/default_pfx.tar.xz" "${PORT_WINE_PATH}/data/prefixes/${PW_PREFIX_NAME}/" 2>/dev/null
         fi
-        ${pw_runtime} env LD_LIBRARY_PATH="${PW_LD_LIBRARY_PATH}" "${WINELOADER}" wineboot -u &>>"${PORT_WINE_TMP_PATH}/update_pfx_log"
+        "${WINELOADER}" wineboot -u &>>"${PORT_WINE_TMP_PATH}/update_pfx_log"
         wait_wineserver &&
         echo "${PW_WINE_USE}" > "${PORT_WINE_PATH}/data/prefixes/${PW_PREFIX_NAME}/.wine_ver"
     elif [[ -z "`cat "${PORT_WINE_PATH}/data/prefixes/${PW_PREFIX_NAME}/.wine_ver" | grep ${PW_WINE_USE}`" || ! -d "${PORT_WINE_PATH}/data/prefixes/${PW_PREFIX_NAME}/dosdevices" ]] ; then 
         check_dirs_and_files_in_pfx
-        ${pw_runtime} env LD_LIBRARY_PATH="${PW_LD_LIBRARY_PATH}" "${WINELOADER}" wineboot -i &>>"${PORT_WINE_TMP_PATH}/update_pfx_log"
+        wineboot -i &>>"${PORT_WINE_TMP_PATH}/update_pfx_log"
         wait_wineserver &&
         echo "${PW_WINE_USE}" > "${PORT_WINE_PATH}/data/prefixes/${PW_PREFIX_NAME}/.wine_ver"
     fi
@@ -436,7 +404,22 @@ start_portwine () {
             try_force_link_file "${PATH_TO_VKD3D_FILES}/x64/${wine_vkd3d_dll}.dll" "${PORT_WINE_PATH}/data/prefixes/${PW_PREFIX_NAME}/drive_c/windows/system32/${wine_vkd3d_dll}.dll"
         done
     fi
-     
+    
+    if [ "${PW_USE_GSTREAMER}" = 1 ] ; then 
+        # if [ -d "${WINEDIR}/lib64/gstreamer-1.0" ] ; then
+        #     export GST_PLUGIN_SYSTEM_PATH_1_0="${WINEDIR}/lib64/gstreamer-1.0:${WINEDIR}/lib/gstreamer-1.0"
+        # elif [ -d "${PW_WINELIB}/portable/lib/lib64/gstreamer-1.0" ] ; then
+        #     export GST_PLUGIN_SYSTEM_PATH_1_0="${PW_WINELIB}/portable/lib/lib64/gstreamer-1.0:${PW_WINELIB}/portable/lib/lib32/gstreamer-1.0"
+        # fi
+        export WINE_GST_REGISTRY_DIR="${PORT_WINE_TMP_PATH}"
+        export MEDIACONV_AUDIO_DUMP_FILE="${PORT_WINE_TMP_PATH}"/audio.foz
+        export MEDIACONV_AUDIO_TRANSCODED_FILE="${PORT_WINE_TMP_PATH}"/transcoded_audio.foz
+        export MEDIACONV_VIDEO_DUMP_FILE="${PORT_WINE_TMP_PATH}"/video.foz
+        export MEDIACONV_VIDEO_TRANSCODED_FILE="${PORT_WINE_TMP_PATH}"/transcoded_video.foz
+    else
+        var_winedlloverride_update "winegstreamer="
+    fi
+
     if [[ "${PW_DX12_DISABLE}" == 1 ]]  
     then var_winedlloverride_update "d3d12,d3d12core="
     else var_winedlloverride_update "d3d12,d3d12core=n"
@@ -484,6 +467,18 @@ start_portwine () {
         unset WINE_FULLSCREEN_FAKE_CURRENT_RES WINE_FULLSCREEN_FSR_STRENGTH WINE_FULLSCREEN_INTEGER_SCALING
     fi
 
+    pw_mangohud_check () {
+    if [[ "${PW_MANGOHUD}" == "1" ]] ; then
+        export PW_MANGOHUD_EXEC='mangohud'
+        [[ "${PW_VULKAN_USE}" = "0" ]] && export MANGOHUD_DLSYM=1
+        print_info "MANGOHUD is enabled"
+    else
+        export PW_MANGOHUD_EXEC=""
+        print_info "MANGOHUD is disabled"
+    fi
+    return 0
+    }
+
     for try_cp_dll_from_wine in "ntdll.dll" "vulkan-1.dll" ; do
         if ! try_copy_file "${WINEDIR}"/lib/wine/fakedlls/${try_cp_dll_from_wine} "${PORT_WINE_PATH}/data/prefixes/${PW_PREFIX_NAME}/drive_c/windows/syswow64/${try_cp_dll_from_wine}"
         then try_copy_file "${WINEDIR}"/lib/wine/i386-windows/${try_cp_dll_from_wine} "${PORT_WINE_PATH}/data/prefixes/${PW_PREFIX_NAME}/drive_c/windows/syswow64/${try_cp_dll_from_wine}"
@@ -526,7 +521,6 @@ start_portwine () {
             echo "START WINETRICKS..." >> "${PORT_WINE_TMP_PATH}/update_pfx_log"
             echo "Try to install DLL in prefix: ${PW_DLL_NEED_INSTALL}" >> "${PORT_WINE_TMP_PATH}/update_pfx_log"
             print_info "Try to install DLL in prefix: ${PW_DLL_NEED_INSTALL}"
-            ${pw_runtime} env PATH="${PATH}" LD_LIBRARY_PATH="${PW_LD_LIBRARY_PATH}" \
             "${PORT_WINE_TMP_PATH}/winetricks" -q -r -f ${PW_DLL_NEED_INSTALL} &>>"${PORT_WINE_TMP_PATH}/update_pfx_log"
             wait_wineserver
             kill_portwine
@@ -536,7 +530,6 @@ start_portwine () {
         if [[ ! -z "${PW_WINDOWS_VER}" && `echo "$PW_WINDOWS_VER" | sed 's/.*/\L&/'` == "xp" ]] ; then
             export PW_WINDOWS_VER="xp64"
         fi
-        ${pw_runtime} env PATH="${PATH}" LD_LIBRARY_PATH="${PW_LD_LIBRARY_PATH}" \
         "${WINELOADER}" winecfg -v `echo "win${PW_WINDOWS_VER}" | sed 's/.*/\L&/'`
         wait_wineserver
         kill_portwine
@@ -562,6 +555,9 @@ start_portwine () {
 }
 
 pw_run () {
+    echo "##########SYSTEM##########"
+    cat /etc/os-release | grep IMAGE_ID
+    echo ""
     unset GDK_BACKEND
     if [[ ! -z "$portwine_exe" ]] ; then
         cd "${PATH_TO_GAME}"
@@ -572,32 +568,17 @@ pw_run () {
     pw_vkbasalt_check
     PW_LOG_TO_FILE="${PORT_WINE_PATH}/${portname}.log"
     print_var "WINEDIR" "WINEPREFIX" "WINEDLLOVERRIDES" "PATH_TO_GAME" "PW_WINE_USE" "PW_VULKAN_USE" "VKD3D_CONFIG" \
-    "PW_LD_LIBRARY_PATH" "PATH" "WINEESYNC" "WINEFSYNC" "WINEFSYNC_FUTEX2" "WINEDLLPATH"
+    "PW_LD_LIBRARY_PATH" "PATH" "WINEESYNC" "WINEFSYNC" "WINEDLLPATH"
     if [[ "${PW_LOG}" == 1 ]] ; then
         echo "WINEDLLOVERRIDES=${WINEDLLOVERRIDES}" >> "${PW_LOG_TO_FILE}"
         echo "------------------------------------" >> "${PW_LOG_TO_FILE}"
         echo "Log WINE:" >> "${PW_LOG_TO_FILE}"
-        ${optirun_on} ${PW_GAMEMODERUN_SLR} ${pw_runtime} \
-        env ${PW_MANGOHUD_SLR} \
-        PATH="${PATH}" \
-        LD_LIBRARY_PATH="${PW_LD_LIBRARY_PATH}" \
-        LD_PRELOAD="${PW_LD_PRELOAD}" \
-        VK_LAYER_PATH="${PW_VK_LAYER_PATH}" \
-        VK_INSTANCE_LAYERS=${PW_VK_INSTANCE_LAYERS} \
-        "${WINELOADER}" "$@" ${LAUNCH_PARAMETERS[@]} &>>"${PW_LOG_TO_FILE}"
+        ${PW_GAMEMODERUN_EXEC} ${PW_MANGOHUD_EXEC} "${WINELOADER}" "$@" ${LAUNCH_PARAMETERS[@]} &>>"${PW_LOG_TO_FILE}"
     else
         if [[ "${PW_USE_TERMINAL}" == "1" ]] ; then
-            export PW_ADD_TO_ARGS_IN_RUNTIME="--xterm"
-            pw_init_runtime
+            PP_USE_XTERM="xterm -e"
         fi
-        ${optirun_on} ${PW_GAMEMODERUN_SLR} ${pw_runtime} \
-        env ${PW_MANGOHUD_SLR} \
-        PATH="${PATH}" \
-        LD_LIBRARY_PATH="${PW_LD_LIBRARY_PATH}" \
-        LD_PRELOAD="${PW_LD_PRELOAD}" \
-        VK_LAYER_PATH="${PW_VK_LAYER_PATH}" \
-        VK_INSTANCE_LAYERS="${PW_VK_INSTANCE_LAYERS}" \
-        "${WINELOADER}" "$@" ${LAUNCH_PARAMETERS[@]}
+        ${PP_USE_XTERM} ${PW_GAMEMODERUN_EXEC} ${PW_MANGOHUD_EXEC} "${WINELOADER}" "$@" ${LAUNCH_PARAMETERS[@]}
     fi
 }
 export -f pw_run
@@ -607,7 +588,6 @@ if [[ $(id -u) -eq 0 ]] ; then
     zenity_error "Do not run the script from the superuser!"
     exit 1
 fi
-[[ -z "${LANG}" ]] && export LANG=C
 
 create_new_dir "${HOME}/.local/share/applications"
 if [[ ! -z "${PW_SILENT_RESTART}" ]] && [[ "${PW_SILENT_RESTART}" = 1 ]] ; then
@@ -619,7 +599,7 @@ fi
 unset MANGOHUD MANGOHUD_DLSYM PW_NO_ESYNC PW_NO_FSYNC PW_VULKAN_USE WINEDLLOVERRIDES PW_NO_WRITE_WATCH PW_YAD_SET PW_ICON_FOR_YAD
 unset PW_CHECK_AUTOINSTAL PW_VKBASALT_EFFECTS PW_VKBASALT_FFX_CAS PORTWINE_DB PORTWINE_DB_FILE PW_DISABLED_CREATE_DB
 unset CHK_SYMLINK_FILE MESA_GL_VERSION_OVERRIDE PATH_TO_GAME PW_START_DEBUG PORTPROTON_NAME PORTWINE_CREATE_SHORTCUT_NAME
-unset PW_PREFIX_NAME WINEPREFIX VULKAN_MOD PW_WINE_VER PW_ADD_TO_ARGS_IN_RUNTIME PW_GAMEMODERUN_SLR AMD_VULKAN_ICD 
+unset PW_PREFIX_NAME WINEPREFIX VULKAN_MOD PW_WINE_VER PW_ADD_TO_ARGS_IN_RUNTIME PW_GAMEMODERUN_EXEC AMD_VULKAN_ICD 
 unset PW_NAME_D_NAME PW_NAME_D_ICON PW_NAME_D_EXEC PW_EXEC_FROM_DESKTOP PW_ALL_DF PW_GENERATE_BUTTONS PW_NAME_D_ICON PW_NAME_D_ICON_48
 
 export portname=PortProton
@@ -687,7 +667,6 @@ fi
 if [[ -z "${INSTALLING_PORT}" ]] ; then
     . "${USER_CONF}"
     pw_port_update
-    pw_download_libs
     pw_check_and_download_wine ${PW_PROTON_LG_VER}
     pw_check_and_download_plugins
     pw_init_db
