@@ -1,0 +1,9 @@
+#!/usr/bin/env bash
+#Author: 
+#SpideyPC.exe 
+#Rating=5
+################################################
+export PW_VULKAN_USE=0
+export PW_WINDOWS_VER="XP"
+export PW_USE_GAMEMODE=1
+export LAUNCH_PARAMETERS="-d3d9"

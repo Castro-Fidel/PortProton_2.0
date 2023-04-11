@@ -1,0 +1,17 @@
+#!/usr/bin/env bash
+#Author: Dezert1r
+#GalaxyClient.exe 
+#GOG_Galaxy_2.0.exe
+#Rating=1-5
+################################################
+export PW_VULKAN_USE=1
+export PW_WINE_USE=PROTON_GE
+export WINEDLLOVERRIDES="galaxycommunication.exe=n;libglesv2="
+export LAUNCH_PARAMETERS="/runWithoutUpdating /deelevated"
+export PW_DLL_INSTALL="vcrun2019"
+add_in_start_portwine ()
+{
+if [ -e "${WINEPREFIX}/drive_c/users/${USER}/Local Settings/Application Data/GOG.com/Galaxy/Configuration/config.json" ] ; then
+    sed -i 's/"featureOverlay" : true,/"featureOverlay" : false,/' "${WINEPREFIX}/drive_c/${USER}/steamuser/Local Settings/Application Data/GOG.com/Galaxy/Configuration/config.json"
+fi
+}

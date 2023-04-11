@@ -1,0 +1,6 @@
+#!/usr/bin/env bash
+#Author: garrett
+#AI.exe
+#Rating=5
+########################################################
+export PW_VULKAN_USE=dxvk

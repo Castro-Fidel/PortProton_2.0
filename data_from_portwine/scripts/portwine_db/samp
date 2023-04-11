@@ -1,0 +1,7 @@
+#!/usr/bin/env bash
+#Author: MrM0der
+#samp.exe 
+#Rating=5
+################################################
+export PW_VULKAN_USE=0
+export LAUNCH_PARAMETERS=""

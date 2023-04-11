@@ -1,0 +1,346 @@
+#!/usr/bin/env bash
+# Author: linux-gaming.ru
+
+if [[ -f "${PORT_WINE_TMP_PATH}/${portname}_loc" ]] ; then
+	read "update_loc" < "${PORT_WINE_TMP_PATH}/${portname}_loc"
+	export update_loc=${update_loc}
+fi
+
+if [ "${update_loc}" = "RUS" ]
+then
+	export loc_gui_pw_reinstall_pp="Переустановить PORTPROTON"
+    export loc_gui_rm_pp="Удалить PORTPROTON"
+    export loc_gui_upd_pp="Проверить обновления"
+    export loc_gui_changelog="История изменений"
+	export loc_gui_change_loc="Сменить язык интерфейса"
+    export loc_gui_edit_usc="Редактировать USER.CONF"
+    export loc_gui_scripts_fb="Откатить версию скриптов"
+    export loc_gui_credits="Авторы и спасибы =)"
+
+	export loc_tray_winefile="Файловый менеджер WINE"
+	export loc_tray_tascmng="Диспетчер задач WINE"
+	export loc_tray_cangelog="История изменений"
+	export loc_tray_force_exit="Завершить работу PortProton"
+
+	export loc_mg_autoinstall="АВТОУСТАНОВКА"
+	export loc_mg_emulators="ЭМУЛЯТОРЫ"
+	export loc_mg_wine_settings="НАСТРОЙКИ WINE"
+	export loc_mg_portproton_settings="НАСТРОЙКИ PORTPROTON"
+	export loc_mg_installed="УСТАНОВЛЕННЫЕ"
+
+	export PW_CHANGELOG_FILE="changelog_rus"
+	export PW_SELECTION_DB_LOC="Найдено более одного DB файла для запускаемого приложения.\nВыберите необходимый, или перед следующим запуском удалите лишний DB файл.\n"
+
+	export inst_set="Выбор"
+	export inst_set_top="Установка PortWINE"
+	export ss_done="Ярлык создан в каталоге PortProton.\nДобавить его в МЕНЮ и на Рабочий стол?"
+
+	export inst_succ="Установка завершена успешно!"
+
+	export port_upd1="Обновление PortWINE"
+	export port_upd2="На сайте linux-gaming.ru вышло обновление для ${portname}\n"
+	export port_upd3="Действие:"
+	export port_upd4="Перейти на сайт"
+	export port_upd5="Напомнить позже"
+	export port_upd6="Больше не напоминать"
+
+	export scripts_upd1="Обновление скриптов"
+	export scripts_upd2="Доступно обновление скриптов для ${portname}"
+	export scripts_upd3="Действие :"
+	export scripts_upd4="Обновить сейчас"
+	export scripts_upd5="Напомнить позже"
+	export scripts_upd6="Больше не напоминать"
+
+	export port_clear_pfx="Вы действительно хотите очистить префикс PortProton?"
+
+	export port_del1="Удаление $portname"
+	export port_del2="Вы действительно хотите полностью удалить PortProton?"
+
+	export port_reinstall="Вы действительно хотите переустановить PortProton?\nДля этого будет необходимо интернет соединение."
+
+	export port_deb1="PortWINE был запущен в режиме создания ${portname}.log и он успешно сохранен в корне каталога порта"
+	export port_deb2="Для диагностики проблемы, скопируйте ВЕСЬ лог в соответствующий канал у нас на сервере дискорда: https://discord.gg/FTaheP99wE"
+
+	export port_start1="Запуск PortWINE"
+	export port_start2="В каком режиме вы хотите запустить PortWINE?"
+	export port_start3="Режим:"
+	export port_start4="Обычный"
+	export port_start5="Отдельной X-сессии"
+	export port_start6="Создать ЛОГ-файл"
+	export port_start7="Запустить winetricks"
+	export port_start8="DXVK"
+
+	export port_debug="Не торопитесь! После окончания работы ${portname}, нажмите STOP."
+
+	export loc_create_shortcut_from_gui="Создать ярлык..."
+	export loc_create_shortcut="Создать ярлык для запускаемого файла."
+	export loc_delete_shortcut="Удалить ярлык для запускаемого файла."
+	export loc_debug="Запуск c созданием .log файла в корне ${portname}"
+	export loc_launch="Запустить файл..."
+	export loc_winecfg="Запустить winecfg для редактирования настроек выбранного префикса"
+	export loc_winefile="Запустить файловый менеждер встроенный в wine"
+    export loc_winecmd="Запустить командную строку wine"
+	export loc_winereg="Запустить редактор реестра выбранного префикса"
+    export loc_winetricks="Запустить префикс менеджер для установки доп. библиотек в выбранный префикс"
+	export loc_edit_db="Изменить файл настроек для"
+	export loc_download_other_wine="Открыть меню для скачивания других версий WINE-PROTON"
+
+	export ENABLE_VKBASALT_INFO='Включить vkBasalt по умолчанию для улучшение графики в играх работающих под Vulkan. (Горячая клавиша HOME отключает vkbasalt)'
+	export PW_NO_ESYNC_INFO='Не использовать примитивы внутрипроцессной синхронизации на основе eventfd. (Рекомендуется не изменять значение)'
+	export PW_NO_FSYNC_INFO='Не использовать примитивы внутрипроцессной синхронизации на основе фьютексов. (Автоматически отключается в системах без FUTEX_WAIT_MULTIPLE поддержки) (Рекомендуется не изменять значение)'
+	export PW_USE_DXR10_INFO='Включить поддержку Ray Tracing v.1.0'
+	export PW_USE_DXR11_INFO='Включить поддержку Ray Tracing v.1.1 (бета)'
+	export PW_FIX_VIDEO_IN_GAME_INFO='Требуется для воспроизведения видео в некоторых играх, чтобы оно не было искажено (обычно окрашено в розовый цвет)'
+	export PW_VULKAN_NO_ASYNC_INFO='Выключить асинхронные вызовы для режимов VULKAN и DXVK'
+	export PW_USE_NVAPI_AND_DLSS_INFO='Включить DLSS на поддерживаемых видеокартах NVIDIA'
+	export PW_OLD_GL_STRING_INFO='Принудительное использование старых версий OpenGL'
+	export PW_HIDE_NVIDIA_GPU_INFO='Замаскировать все функции используемые для видеокарт NVIDIA'
+	export PW_FORCE_USE_VSYNC_INFO='Принудительное включение вертикальной синхронизации'
+	export PW_VIRTUAL_DESKTOP_INFO='Включить запуск приложение в виртуальном рабочем столе WINE'
+	export PW_WINEDBG_DISABLE_INFO='Отключить все функции отладки WINE (Рекомендуется не изменять значение)'
+	export PW_USE_TERMINAL_INFO='Запускать приложение в терминале'
+    export PW_WINE_ALLOW_XIM_INFO='Использовать альтернативный режим для контроллера (Использовать только в случае проблем с контроллером)'
+	export PW_HEAP_DELAY_FREE_INFO='Включить задержку освобождения некоторой памяти, чтобы обойти ошибки, связанные с использованием приложения после освобождения памяти.'
+	export PW_NO_WRITE_WATCH_INFO='Очень опасный способ взлома таймера записи в памяти в ntdll. Это улучшает производительность некоторых очень специфических игр. (Рекомендуется не изменять значение)'
+	export PW_GUI_DISABLED_CS_INFO='Отключить окно выбора режимов запуска и версии WINE'
+	export PW_USE_GSTREAMER_INFO='Использовать Gstreamer для вывода роликов в играх (поддержка WMF)'
+	export PW_USE_RUNTIME_INFO='Использовать контейнерный режим запуска (Рекомендуется не изменять значение)'
+	export PW_MANGOHUD_INFO='Использование мониторинга FPS и нагрузки системы (Включается и выключается сочитанием клавиш - правый Shift + F12)'
+	export PW_USE_GAMEMODE_INFO='Использование автоматической оптимизации системы для увеличения производительности в играх (при условии установленного пакета gamemode в системе)'
+	export PW_DX12_DISABLE_INFO='Принудительное отключение DirectX 12'
+	export PW_USE_WINE_DXGI_INFO='Принудительное использование встроенной библиотеки DXGI (в редких случаях решает проблемы с запуском игр под DX12)'
+	export PW_MANGOHUD_USER_CONF_INFO='Принудительное использование системных настроек MANGOHUD (GOverlay и т.п.)'
+	export PW_USE_D3D_EXTRAS_INFO='Включить принудительное использование сторонних библиотек DirectX'
+	export PW_PRIME_RENDER_OFFLOAD_INFO='Включить дискретную видеокарту NVIDIA для ноутбуков с гибридной графикой (при поддержке установленого драйвера в ОС)'
+	export PW_USE_WINDOWS_7_INFO='Изменить версию WINDOWS 10 на WINDOWS 7 в префиксе'
+	export PW_USE_AMDVLK_DRIVER_INFO='Использовать драйвер AMDVLK вместо RADV на видеокартах от AMD'
+	export PW_USE_SHADER_CACHE_INFO='Использовать кеширование шейдеров средствами WINE (отключать только при наличии микрофризов в игре)'
+	export PW_WINE_FULLSCREEN_FSR_INFO='Работает во время использования любой версии ProtonGE в полноэкранном режиме при разрешении ниже стандартного для экрана'
+	export PW_USE_FAKE_DLSS_INFO='Включить транслятор DLSS в FSR 2 в играх DirectX 12'
+	export PW_MANGOHUD_x32_INFO='Включить MANGOHUD для 32 битных приложений и игр'
+
+	export PW_3DFX_INFO='Имитация старого графического ускорителя 3dfx (добавляет горизонтальные полосы)'
+	export PW_AdaptiveSharpen_INFO='Увеличение резкости, можно использовать совместо с CAS'
+	export PW_Bloom_INFO='Добавляет свечения от ярких источников света в игре'
+	export PW_Border_INFO='Обрезка изображения сверху и снизу (как в кино =)'
+	export PW_Cartoon_INFO='Сильное увеличение резкости краев тексур'
+	export PW_ChromaticAberration_INFO='Добавляет хроматические аберрации к изображению'
+	export PW_Clarity_INFO='Увеличение резкости текстур с небольшими модификациями контраста изображения (похож по эффекту на CAS)'
+	export PW_ColorMatrix_INFO='Добавление холодных цветов'
+	export PW_Colourfulness_INFO='Увеличение насыщености цветов'
+	export PW_FakeHDR_INFO='Расширение динамического диапазона цветов'
+	export PW_FilmGrain2_INFO='Добавление эффекта зерна кинопленки'
+	export PW_Curves_INFO='Увеличение контраста изображения'
+	export PW_Denoise_INFO='Уменьшение шумов за счет смазывания изображения'
+	export PW_Emphasize_INFO='Уменьшение рязрядности цветопередачи'
+	export PW_FakeMotionBlur_INFO='Сильное размытие объектов в движении'
+	export PW_FilmicAnamorphSharpen_INFO='Увеличение резкости (рекомендую для мультяшных игр)'
+	export PW_FilmicPass_INFO='Добавление холодных цветов'
+	export PW_SMAA_INFO='Альтернативный вариант сглаживания (меньший эффект, но с меньшим потреблением ресурсов GPU, относительно стандартного SMAA)'
+	export PW_GaussianBlur_INFO='Небольшой эффект размытия ярких обьектов (например пламя)'
+
+	export PW_WAYLAND_INFO="Внимание! Вы запускаете PortProton в сессии Wayland, некоторые функции могут быть недоступны!\nРекомендуется перезапустить сессию в X11!"
+
+	export loc_find_d3dadapter9_error="не найден в системе.\nУстановите недостающий пакет: </Sb>d3dadapter9</b>"
+
+	export loc_gui_create_shortcut_for_exe="Выберите .exe файл для которого необходимо создать ярлык и нажмите ОК.\n"
+
+	export loc_gui_error='Ошибка.'
+	export loc_gui_error_download="Проверьте интернет соединение и\nнажмите OK для повторной попытки скачивания"
+	export loc_gui_settings="Пожалуйста подождите."
+	export loc_gui_sett_info="Обновление конфигурации <b>PortProton</b>..."
+	export loc_gui_edit_db="Изменение файла настроек для:"
+	export loc_gui_edit_db_help="<b>ПРИМЕЧАНИЕ:</b> Для вывода справки по каждому пункту, просто наведите курсор мыши на текст."
+
+	export loc_gui_cancel="ОТМЕНИТЬ ИЗМЕНЕНИЯ"
+	export loc_gui_cancel_help="Отменить текущие изменения и вернутся в предыдущее меню."
+
+	export loc_gui_open_db="ОТКРЫТЬ ФАЙЛ НАСТРОЕК"
+	export loc_gui_open_db_help="Открыть файл настроек <b>.ppdb</b> в системном текстовом редакторе для просмотра и изменений переменных вручную."
+
+	export loc_gui_save_changes="СОХРАНИТЬ ИЗМЕНЕНИЯ"
+	export loc_gui_save_changes_help="Сохранить текущие изменения, и перейти в предыдущее меню."
+
+	export loc_gui_ver_windows="Изменить версию эмуляции <b>WINDOWS</b>"
+	export loc_gui_ver_windows_help="Изменение версии эмуляции <b>WINDOWS</b> может потребоваться для запуска старых игр. Версии <b>WINDOWS</b> ниже 10 не поддерживает новые игры с DirectX 12."
+
+	export loc_gui_aut_winetricks="Автоматически установить с помощью <b>WINETRICKS</b>"
+	export loc_gui_aut_winetricks_help="Автоматически установить с помощью <b>WINETRICKS</b> дополнительных библиотек необходимых для запуска игры/программы. Список библиотек разделяются пробелами. (Пример есть в выпадающем списке)"
+
+	export loc_gui_winedllover="Принудительно использовать/отключить библиотеки"
+	export loc_gui_winedllover_help="Принудительное использование/отключиение библиотеки только для даного приложения. (Примеры есть в выпадающем списке)
+
+Краткая инструкция:
+	* библиотеки пишутся <b>БЕЗ</b> расширения файлов .dll
+	* библиотеки разделяются точкой с запятой - <b>;</b>
+	* библиотека=n     - использовать библиотеку <b>WINDOWS</b> (сторонюю) 
+	* библиотека=b     - использовать библиотеку <b>WINE</b> (встроенную) 
+	* библиотека=n,b  - использовать <b>WINDOWS</b> библиотеку, а затем <b>WINE</b>
+	* библиотека=b,n  - использовать библиотеку <b>WINE</b>, а затем <b>WINDOWS</b>
+	* библиотека=       - отключить использование данной библиотеки"
+
+	export loc_gui_arg_exe="Добавить аргумент после <b>.exe</b> файла"
+	export loc_gui_arg_exe_help="Добавление аргумента после <b>.exe</b> файла, так же как если бы вы добавили аргумент в ярлыке в системе  <b>WINDOWS </b>" 
+
+	export loc_gui_mango_fps="Ограничить FPS (0 - выключено)"
+	export loc_gui_mango_fps_help="Включение ограничения количества кадров в секунду средстами MANGOHUD встроенного в PortProton."
+
+	export loc_gui_check_new_wine="Проверяем новые версии WINE на GitHub"
+	export loc_gui_check_new_wine_error="Не удается установить соединение с GitHub\nдля проверки новых версии WINE."
+	export loc_gui_set_new_wine="Выберите версию WINE для загрузки:"
+	export loc_gui_del_wine="Выберите версию WINE для удаления:"
+	export loc_gui_installed_wine="УСТАНОВЛЕННЫЕ"
+
+	export loc_gui_ffx_cas="AMD FidelityFX - CAS предназначе для значительного улучшения резкости текстур без дополнительных установок модификаций для игр, с минимальной потерей производительности. (Для старых игр рекомендуется значение = 100)"
+	export loc_gui_disabled_vkbas="ВЫКЛЮЧИТЬ  VKBASALT"
+	export loc_gui_disabled_vkbas_help="Выключить vkBasalt и перейти в предыдущее меню."
+	export loc_gui_vkbasalt_top="Настройки vkBasalt для добавления эффектов в играх работающих под Vulkan. (Клавиша <b>HOME</b> отключает vkbasalt)\n<b>ПРИМЕЧАНИЕ:</b> Для вывода справки по каждому пункту, просто наведите курсор мыши на текст.\n"
+
+	export loc_gui_no="НЕТ"
+	export loc_gui_yes="ДА"
+
+	export loc_gui_create_shortcut="СОЗДАТЬ ЯРЛЫК"
+	export loc_gui_delete_shortcut="УДАЛИТЬ ЯРЛЫК"
+	export loc_gui_launch="ЗАПУСТИТЬ"
+	export loc_gui_debug="СОЗДАТЬ ЛОГ"
+	export loc_gui_edit_db_start="НАСТРОИТЬ"
+	export loc_gui_vkbasalt_start="VKBASALT"
+	export loc_gui_db_comments="Найден файл настроек PortProton для"
+
+	export loc_gui_vulkan_stable="Стабильные DXVK ${DXVK_STABLE_VER} и VKD3D ${VKD3D_STABLE_VER}"
+	export loc_gui_vulkan_git="Новейшие DXVK ${DXVK_GIT_VER} и VKD3D ${VKD3D_GIT_VER}"
+	export loc_gui_gallium_nine="GALLIUM_NINE (DX9 для MESA)"
+	export loc_gui_open_gl="OPENGL (Для видеокарт без VULKAN)"
+
+	export loc_gui_installing_the="Устанавливаем"
+	export loc_gui_please_wait="Пожалуйста подождите..."
+
+elif [ "${update_loc}" = "ENG" ]
+then
+	export loc_gui_installing_the="Installing the"
+	export loc_gui_please_wait="Please wait..."
+
+	export loc_gui_vulkan_stable="VULKAN (Stable version of DXVK and VKD3D)"
+	export loc_gui_vulkan_git="VULKAN (New GIT version of DXVK and VKD3D)"
+	export loc_gui_gallium_nine="GALLIUM_NINE (Native DX9 on MESA)"
+	export loc_gui_open_gl="OPENGL (For video cards without VULKAN)"
+
+	export loc_gui_error='Error.'
+	export loc_gui_error_download="You will need to check internet connection,\nand press OK for repeat download"
+	export loc_gui_settings="Settings."
+	export loc_gui_sett_info="Updating parameters..."
+	export loc_gui_edit_db="Change settings in database file for"
+	export loc_gui_cancel="CANCEL"
+	export loc_gui_open_db="OPEN DB FILE"
+	export loc_gui_save_changes="SAVE CHANGES"
+	export loc_gui_ver_windows="SELECT VERSION OF WINDOWS"
+	export loc_gui_aut_winetricks="AUTOINSTALL WITH WINETRICKS"
+	export loc_gui_winedllover="WINEDLLOVERRIDES"
+	export loc_gui_arg_exe="ADD ARGUMENTS FOR .EXE FILE"
+	export loc_gui_mango_fps="MANGOHUD FPS LIMIT (0-disabled)"
+	export loc_gui_check_new_wine="Check new version WINE from GitHub"
+	export loc_gui_check_new_wine_error="Error: check wine from github."
+	export loc_gui_set_new_wine="Select WINE for download:"
+	export loc_gui_del_wine="Select installed WINE for delete:"
+	export loc_gui_installed_wine="INSTALLED"
+	export loc_gui_disabled_vkbas="DISABLE  VKBASALT"
+	export loc_gui_no="NO"
+	export loc_gui_yes="YES"
+	export loc_gui_create_shortcut="CREATE SHORTCUT"
+	export loc_gui_delete_shortcut="DELETE SHORTCUT"
+	export loc_gui_launch="LAUNCH"
+	export loc_gui_debug="DEBUG"
+	export loc_gui_edit_db_start="EDIT  DB"
+	export loc_gui_vkbasalt_start="VKBASALT"
+	export loc_gui_db_comments="PortProton database file was found for"
+
+	export loc_create_shortcut_from_gui="Create shortcut..."
+
+    export loc_gui_rm_pp="REMOVE PORTPROTON"
+    export loc_gui_upd_pp="UPDATE PORTPROTON"
+    export loc_gui_changelog="CHANGELOG"
+	export loc_gui_change_loc="CHANGE LANGUAGE"
+    export loc_gui_edit_usc="EDIT USER.CONF"
+    export loc_gui_scripts_fb="SCRIPTS FROM BACKUP"
+    export loc_gui_credits="CREDITS"
+	export loc_gui_pw_reinstall_pp="REINSTALL PORTPROTON"
+
+	export loc_tray_winefile="WINEFILE"
+	export loc_tray_tascmng="TASKMNR"
+	export loc_tray_cangelog="CHANGE  LOG"
+	export loc_tray_force_exit="FORCE  EXIT"
+
+	export loc_mg_autoinstall="AUTOINSTALL"
+	export loc_mg_emulators="EMULATORS"
+	export loc_mg_wine_settings="WINE SETTINGS"
+	export loc_mg_portproton_settings="PORTPROTON SETTINGS"
+	export loc_mg_installed="INSTALLED"
+
+	export PW_CHANGELOG_FILE="changelog_eng"
+	export PW_SELECTION_DB_LOC="More than one DB file found for the application being launched.\nSelect the required one, or delete the extra DB file before the next run.\n"
+
+	export inst_set="Sett..."
+	export inst_set_top="PortWINE setting"
+	export ss_done="The shortcut was created in the ${portname} directory.\n    Add it to MENU -> GAMES and Desktop?"
+	export inst_succ="The installation was successful."
+
+	export port_upd1="New update PortWINE"
+	export port_upd2="On linux-gaming.ru site published an update to the ${portname}\n"
+	export port_upd3="Action:"
+	export port_upd4="Go to the website"
+	export port_upd5="Remind me later"
+	export port_upd6="Do not remind me"
+
+	export scripts_upd1="New update for scripts"
+	export scripts_upd2="Scripts update avialable for ${portname}"
+	export scripts_upd3="Action :"
+	export scripts_upd4="Updating now"
+	export scripts_upd5="Remind me later"
+	export scripts_upd6="Do not remind me"
+
+	export port_clear_pfx="Do you want to clear prefix in PortProton?"
+
+	export port_del1="Remove $portname"
+	export port_del2="Are you sure you want to delete the PortProton"
+	
+	export port_reinstall="Do you really want to reinstall PortProton?\nFor this, an internet connection will be required."
+
+	export port_deb1="PortWINE was launched in creation mode ${portname}.log and it is successfully stored in the root directory of the port"
+	export port_deb2="To diagnose the problem, copy ALL of the log to discord server: https://discord.gg/FTaheP99wE"
+
+	export port_start1="Starting the PortWINE"
+	export port_start2="In what mode you want to start the PortWINE?"
+	export port_start3="Mode:"
+	export port_start4="Normal"
+	export port_start5="Individual X-Session"
+	export port_start6="Create LOG-file"
+	export port_start7="Run winetricks"
+	export port_start8="DXVK"
+
+	export loc_gui_create_shortcut_for_exe="Choose the .exe file for which you need to create a shortcut and click OK.\n"
+
+	export port_debug="Please wait! After finishing the ${portname}, click STOP."
+	
+	export PW_WAYLAND_INFO="Attention! You are running $portname in a Wayland session, some features may not be available!\nRestarting your session in X11 is recommended!"
+
+	export loc_download_other_wine="Download other wine-proton from GITHUB"
+
+	# Helped in translation: ConTI1NuEsZZZ
+	export loc_create_shortcut="Create shortcut for select file..."
+	export loc_delete_shortcut="Delete shortcut for select file..."
+	export loc_debug="Launch with the creation of a .log file at the root ${portname}"
+    export loc_launch="Run file ..."
+    export loc_winecfg="Run winecfg to edit prefix settings ${portname}"
+    export loc_winefile="Run the file manager built into wine"
+    export loc_winecmd="Run wine command line"
+    export loc_winereg="Run Registry Prefix Editor ${portname}"
+    export loc_winetricks="Run winetricks to install additional libraries to the prefix ${portname}"
+	export loc_edit_db="Edit database file for"
+
+	export loc_find_d3dadapter9_error="not found in the system.\nInstall it and try again."
+else
+	SET_LANG=`zenity --title  "LAUNGUAGE" --text "Select the language" --list --radiolist \
+	--column="Set:" --column "Choose language:" TRUE "RUS" FALSE "ENG" `
+	echo "${SET_LANG}" > "${PORT_WINE_TMP_PATH}/${portname}_loc"
+	exit 0
+fi
