@@ -1,25 +1,17 @@
 #!/usr/bin/env bash
 # Author: Castro-Fidel (linux-gaming.ru)
 ########################################################################
-pw_ping_test () {
-    ping -w3 -c1 github.com &> /dev/null
-    [ "$?" == "0" ] && return 0 || return 1
-}
-
 print_error () {
     echo "ERROR: $@"
 }
-export -f print_error
 
 print_info () {
     echo "INFO: $@"
 }
-export -f print_info
 
 print_var () {
     for vp in $@ ; do echo "${vp}=${!vp}" ; done
 }
-export -f print_var
 
 try_copy_file () {
     if [ ! -f "$1" ] ; then	print_info "file $1 not found for copy" && return 1
@@ -32,7 +24,6 @@ try_copy_file () {
         fi
     fi
 }
-export -f try_copy_file
 
 try_copy_dir () {
     if [ ! -d "$1" ] ; then	print_info "directory $1 not found for copy"
@@ -43,7 +34,6 @@ try_copy_dir () {
     fi
     return 1
 }
-export -f try_copy_dir
 
 try_remove_file () {
     if [ -f "$1" ] ; then
@@ -51,7 +41,6 @@ try_remove_file () {
         [ "$?" == 0 ] && return 0 || return 1
     fi
 }
-export -f try_remove_file
 
 try_remove_dir () {
     if [ -d "$1" ] ; then
@@ -59,7 +48,6 @@ try_remove_dir () {
         [ "$?" == 0 ] && return 0 || return 1
     fi
 }
-export -f try_remove_dir
 
 try_force_link_file () {
     if [ ! -f "$1" ] ; then :
@@ -70,7 +58,6 @@ try_force_link_file () {
     fi
     return 1
 }
-export -f try_force_link_file
 
 check_symlink () {
     CHK_SYMLINK_FILE="`file "$1"`"
@@ -84,7 +71,6 @@ check_symlink () {
         return 1
     fi
 }
-export -f check_symlink
 
 try_force_link_dir () {
     if [ ! -d "$1" ] ; then	print_info "directory $1 not found for link"
@@ -95,35 +81,58 @@ try_force_link_dir () {
     fi
     return 1
 }
-export -f try_force_link_dir
+
+# функция проверки каталога (первый аргумен) с выводом в файл (второй аргумент), третий аргумент является фильтром
+parsing_dir () {
+    if [[ -d "$1" ]] ; then
+        orig_IFS="$IFS"
+        IFS=$'\n'
+        try_remove_file "$2"
+        for par_dir in $(ls -1 "$1") ; do
+            if [[ -n "${par_dir}" ]] ; then
+                par_dir_new=`echo "${par_dir}" | awk '$1=$1' | sed -e s/[[:blank:]]/_/g`
+                if [[ -n "$3" ]] ; then
+                    echo "${par_dir_new^^}=\"$(dirname "`readlink -f "$1/$par_dir"`")/$par_dir\"" | grep -i "$3" >> "$2"
+                else
+                    echo "${par_dir_new^^}=\"$(dirname "`readlink -f "$1/$par_dir"`")/$par_dir\"" >> "$2"
+                fi
+            else
+                return 1
+            fi
+        done
+        IFS="$orig_IFS"
+    else
+        return 1
+    fi
+    return 0
+}
 
 check_process () {
     [ ! -n "`ps cax | grep "$1" | awk '{print $1}'`" ] && return 0 || return 1 
 }
-export -f check_process
 
 try_download () {
-    PW_DOWNLOAD_FILE_NAME="$(basename $1)"
+    PP_DOWNLOAD_FILE_NAME="$(basename $1)"
     set -o pipefail
     wget -O "$2" --read-timeout 300 --retry-connrefused --timeout 15 --tries 2 \
     --user-agent="Mozilla/5.0 (compatible; Konqueror/2.1.1; X11)" "${1}" 2>&1 | \
     tr '\r' '\n' | sed -u 's/.* \([0-9]\+%\)\ \+\([0-9,.]\+.\) \(.*\)/\1\n#Downloading at \1\/, \2\/s, ETA \3/; s/^20[0-9][0-9].*/#Done./' | \
-    zenity --progress --percentage=0 --title="Download ${PW_DOWNLOAD_FILE_NAME}" --text=Starting... --auto-close --width=500 --height=90
+    zenity --progress --percentage=0 --title="Download ${PP_DOWNLOAD_FILE_NAME}" --text=Starting... --auto-close --width=500 --height=90
     if [ "${PIPESTATUS[0]}" != 0 ] ; then
-        print_error "Failed to download ${PW_DOWNLOAD_FILE_NAME} from GitHub."
-        print_info "Try download ${PW_DOWNLOAD_FILE_NAME} from FTP"
+        print_error "Failed to download ${PP_DOWNLOAD_FILE_NAME} from GitHub."
+        print_info "Try download ${PP_DOWNLOAD_FILE_NAME} from FTP"
         try_remove_file "$2"
         wget -O "$2" --read-timeout 300 --retry-connrefused --timeout 15 --tries 2 \
-        --user-agent="Mozilla/5.0 (compatible; Konqueror/2.1.1; X11)" --ftp-user=anonymous "ftp://171.22.215.18/archives/${PW_DOWNLOAD_FILE_NAME}" 2>&1 | \
+        --user-agent="Mozilla/5.0 (compatible; Konqueror/2.1.1; X11)" --ftp-user=anonymous "ftp://171.22.215.18/archives/${PP_DOWNLOAD_FILE_NAME}" 2>&1 | \
         tr '\r' '\n' | sed -u 's/.* \([0-9]\+%\)\ \+\([0-9,.]\+.\) \(.*\)/\1\n#Downloading at \1\/, \2\/s, ETA \3/; s/^20[0-9][0-9].*/#Done./' | \
-        zenity --progress --percentage=0 --title="Download ${PW_DOWNLOAD_FILE_NAME}" --text=Starting... --auto-close --width=500 --height=90
+        zenity --progress --percentage=0 --title="Download ${PP_DOWNLOAD_FILE_NAME}" --text=Starting... --auto-close --width=500 --height=90
         if [ "${PIPESTATUS[0]}" != 0 ] ; then
-            print_error "Failed to download ${PW_DOWNLOAD_FILE_NAME} from FTP."
+            print_error "Failed to download ${PP_DOWNLOAD_FILE_NAME} from FTP."
             try_remove_file "$2"
             return 1   
         fi
     fi
-    try_remove_file "${PORT_WINE_TMP_PATH}/download_log"
+    try_remove_file "${PORT_PROTON_TMP_PATH}/download_log"
     return 0
 }
 
@@ -185,22 +194,21 @@ var_radv_perftest_config_update () {
 }
 
 var_vk_istance_layers_config_update () {
-    if [ ! -z "${PW_VK_INSTANCE_LAYERS}" ]
-    then export PW_VK_INSTANCE_LAYERS="${1}:${PW_VK_INSTANCE_LAYERS}"
-    else export PW_VK_INSTANCE_LAYERS="${1}"
+    if [ ! -z "${PP_VK_INSTANCE_LAYERS}" ]
+    then export PP_VK_INSTANCE_LAYERS="${1}:${PP_VK_INSTANCE_LAYERS}"
+    else export PP_VK_INSTANCE_LAYERS="${1}"
     fi
     return 0
 }
 
 unpack_tar_zst () {
     set -o pipefail
-    unset PW_ZSTD_PORT
+    unset PP_ZSTD_PORT
     if  [[ `which zstd` ]] &>/dev/null ; then
         tar -I zstd -xhvf "$1" -C "$2" | sszen
         [ "${PIPESTATUS[0]}" != 0 ] && print_error "File $1 unpacking error." && return 1 || return 0
     else
-        env LD_LIBRARY_PATH="${LD_LIBRARY_PATH}:${PW_WINELIB}/portable/lib/lib64:${PW_WINELIB}/portable/lib/lib" tar -I "${PW_WINELIB}/portable/bin/zstd" -xhvf "$1" -C "$2" | sszen
-        [ "${PIPESTATUS[0]}" != 0 ] && print_error "File $1 unpacking error." && return 1 || return 0
+        print_error "zstd not found." && return 1
     fi
 }
 
@@ -222,45 +230,45 @@ unpack_tar () {
     [ "${PIPESTATUS[0]}" != 0 ] && print_error "File $1 unpacking error." && return 1 || return 0
 }
 
-pw_clear_pfx () {
-    try_remove_file "${PORT_WINE_PATH}/data/prefixes/${PW_PREFIX_NAME}/system.reg"
-    try_remove_file "${PORT_WINE_PATH}/data/prefixes/${PW_PREFIX_NAME}/user.reg"
-    try_remove_file "${PORT_WINE_PATH}/data/prefixes/${PW_PREFIX_NAME}/userdef.reg"
-    try_remove_file "${PORT_WINE_PATH}/data/prefixes/${PW_PREFIX_NAME}/winetricks.log"
-    try_remove_file "${PORT_WINE_PATH}/data/prefixes/${PW_PREFIX_NAME}/.update-timestamp"
-    try_remove_file "${PORT_WINE_PATH}/data/prefixes/${PW_PREFIX_NAME}/drive_c/.windows-serial"
-    try_remove_dir "${PORT_WINE_PATH}/data/prefixes/${PW_PREFIX_NAME}/drive_c/windows/"
-    try_remove_dir "${PORT_WINE_PATH}/data/prefixes/${PW_PREFIX_NAME}/drive_c/ProgramData/Setup"
-    try_remove_dir "${PORT_WINE_PATH}/data/prefixes/${PW_PREFIX_NAME}/drive_c/ProgramData/Windows"
-    try_remove_dir "${PORT_WINE_PATH}/data/prefixes/${PW_PREFIX_NAME}/drive_c/ProgramData/WindowsTask"
-    try_remove_dir "${PORT_WINE_PATH}/data/prefixes/${PW_PREFIX_NAME}/drive_c/ProgramData/Package Cache"
-    try_remove_dir "${PORT_WINE_PATH}/data/prefixes/${PW_PREFIX_NAME}/drive_c/users/Public/Local Settings/Application Data/Microsoft"
-    try_remove_dir "${PORT_WINE_PATH}/data/prefixes/${PW_PREFIX_NAME}/drive_c/users/Public/Local Settings/Application Data/Temp"
-    try_remove_dir "${PORT_WINE_PATH}/data/prefixes/${PW_PREFIX_NAME}/drive_c/users/Public/Local Settings/Temporary Internet Files"
-    try_remove_dir "${PORT_WINE_PATH}/data/prefixes/${PW_PREFIX_NAME}/drive_c/users/Public/Application Data/Microsoft"
-    try_remove_dir "${PORT_WINE_PATH}/data/prefixes/${PW_PREFIX_NAME}/drive_c/users/Public/Application Data/wine_gecko"
-    try_remove_dir "${PORT_WINE_PATH}/data/prefixes/${PW_PREFIX_NAME}/drive_c/users/Public/Temp"
-    try_remove_dir "${PORT_WINE_PATH}/data/prefixes/${PW_PREFIX_NAME}/drive_c/users/steamuser/Local Settings/Application Data/Microsoft"
-    try_remove_dir "${PORT_WINE_PATH}/data/prefixes/${PW_PREFIX_NAME}/drive_c/users/steamuser/Local Settings/Application Data/Temp"
-    try_remove_dir "${PORT_WINE_PATH}/data/prefixes/${PW_PREFIX_NAME}/drive_c/users/steamuser/Local Settings/Temporary Internet Files"
-    try_remove_dir "${PORT_WINE_PATH}/data/prefixes/${PW_PREFIX_NAME}/drive_c/users/steamuser/Application Data/Microsoft"
-    try_remove_dir "${PORT_WINE_PATH}/data/prefixes/${PW_PREFIX_NAME}/drive_c/users/steamuser/Application Data/wine_gecko"
-    try_remove_dir "${PORT_WINE_PATH}/data/prefixes/${PW_PREFIX_NAME}/drive_c/users/steamuser/Temp"
-    try_remove_dir "${PORT_WINE_PATH}/data/prefixes/${PW_PREFIX_NAME}/drive_c/Program Files/Internet Explorer"
-    try_remove_dir "${PORT_WINE_PATH}/data/prefixes/${PW_PREFIX_NAME}/drive_c/Program Files/Windows Media Player"
-    try_remove_dir "${PORT_WINE_PATH}/data/prefixes/${PW_PREFIX_NAME}/drive_c/Program Files/Windows NT"
-    try_remove_dir "${PORT_WINE_PATH}/data/prefixes/${PW_PREFIX_NAME}/drive_c/Program Files/Common Files"
-    try_remove_dir "${PORT_WINE_PATH}/data/prefixes/${PW_PREFIX_NAME}/drive_c/Program Files (x86)/Internet Explorer"
-    try_remove_dir "${PORT_WINE_PATH}/data/prefixes/${PW_PREFIX_NAME}/drive_c/Program Files (x86)/Common Files"
-    try_remove_dir "${PORT_WINE_PATH}/data/prefixes/${PW_PREFIX_NAME}/drive_c/Program Files (x86)/Windows Media Player"
-    try_remove_dir "${PORT_WINE_PATH}/data/prefixes/${PW_PREFIX_NAME}/drive_c/Program Files (x86)/Windows NT"
-    rm -f "${PORT_WINE_TMP_PATH}"/*.bin
-    rm -f "${PORT_WINE_TMP_PATH}"/*.foz
+PP_clear_pfx () {
+    try_remove_file "${PORT_PROTON_PATH}/data/prefixes/${PP_PREFIX_NAME}/system.reg"
+    try_remove_file "${PORT_PROTON_PATH}/data/prefixes/${PP_PREFIX_NAME}/user.reg"
+    try_remove_file "${PORT_PROTON_PATH}/data/prefixes/${PP_PREFIX_NAME}/userdef.reg"
+    try_remove_file "${PORT_PROTON_PATH}/data/prefixes/${PP_PREFIX_NAME}/winetricks.log"
+    try_remove_file "${PORT_PROTON_PATH}/data/prefixes/${PP_PREFIX_NAME}/.update-timestamp"
+    try_remove_file "${PORT_PROTON_PATH}/data/prefixes/${PP_PREFIX_NAME}/drive_c/.windows-serial"
+    try_remove_dir "${PORT_PROTON_PATH}/data/prefixes/${PP_PREFIX_NAME}/drive_c/windows/"
+    try_remove_dir "${PORT_PROTON_PATH}/data/prefixes/${PP_PREFIX_NAME}/drive_c/ProgramData/Setup"
+    try_remove_dir "${PORT_PROTON_PATH}/data/prefixes/${PP_PREFIX_NAME}/drive_c/ProgramData/Windows"
+    try_remove_dir "${PORT_PROTON_PATH}/data/prefixes/${PP_PREFIX_NAME}/drive_c/ProgramData/WindowsTask"
+    try_remove_dir "${PORT_PROTON_PATH}/data/prefixes/${PP_PREFIX_NAME}/drive_c/ProgramData/Package Cache"
+    try_remove_dir "${PORT_PROTON_PATH}/data/prefixes/${PP_PREFIX_NAME}/drive_c/users/Public/Local Settings/Application Data/Microsoft"
+    try_remove_dir "${PORT_PROTON_PATH}/data/prefixes/${PP_PREFIX_NAME}/drive_c/users/Public/Local Settings/Application Data/Temp"
+    try_remove_dir "${PORT_PROTON_PATH}/data/prefixes/${PP_PREFIX_NAME}/drive_c/users/Public/Local Settings/Temporary Internet Files"
+    try_remove_dir "${PORT_PROTON_PATH}/data/prefixes/${PP_PREFIX_NAME}/drive_c/users/Public/Application Data/Microsoft"
+    try_remove_dir "${PORT_PROTON_PATH}/data/prefixes/${PP_PREFIX_NAME}/drive_c/users/Public/Application Data/wine_gecko"
+    try_remove_dir "${PORT_PROTON_PATH}/data/prefixes/${PP_PREFIX_NAME}/drive_c/users/Public/Temp"
+    try_remove_dir "${PORT_PROTON_PATH}/data/prefixes/${PP_PREFIX_NAME}/drive_c/users/steamuser/Local Settings/Application Data/Microsoft"
+    try_remove_dir "${PORT_PROTON_PATH}/data/prefixes/${PP_PREFIX_NAME}/drive_c/users/steamuser/Local Settings/Application Data/Temp"
+    try_remove_dir "${PORT_PROTON_PATH}/data/prefixes/${PP_PREFIX_NAME}/drive_c/users/steamuser/Local Settings/Temporary Internet Files"
+    try_remove_dir "${PORT_PROTON_PATH}/data/prefixes/${PP_PREFIX_NAME}/drive_c/users/steamuser/Application Data/Microsoft"
+    try_remove_dir "${PORT_PROTON_PATH}/data/prefixes/${PP_PREFIX_NAME}/drive_c/users/steamuser/Application Data/wine_gecko"
+    try_remove_dir "${PORT_PROTON_PATH}/data/prefixes/${PP_PREFIX_NAME}/drive_c/users/steamuser/Temp"
+    try_remove_dir "${PORT_PROTON_PATH}/data/prefixes/${PP_PREFIX_NAME}/drive_c/Program Files/Internet Explorer"
+    try_remove_dir "${PORT_PROTON_PATH}/data/prefixes/${PP_PREFIX_NAME}/drive_c/Program Files/Windows Media Player"
+    try_remove_dir "${PORT_PROTON_PATH}/data/prefixes/${PP_PREFIX_NAME}/drive_c/Program Files/Windows NT"
+    try_remove_dir "${PORT_PROTON_PATH}/data/prefixes/${PP_PREFIX_NAME}/drive_c/Program Files/Common Files"
+    try_remove_dir "${PORT_PROTON_PATH}/data/prefixes/${PP_PREFIX_NAME}/drive_c/Program Files (x86)/Internet Explorer"
+    try_remove_dir "${PORT_PROTON_PATH}/data/prefixes/${PP_PREFIX_NAME}/drive_c/Program Files (x86)/Common Files"
+    try_remove_dir "${PORT_PROTON_PATH}/data/prefixes/${PP_PREFIX_NAME}/drive_c/Program Files (x86)/Windows Media Player"
+    try_remove_dir "${PORT_PROTON_PATH}/data/prefixes/${PP_PREFIX_NAME}/drive_c/Program Files (x86)/Windows NT"
+    rm -f "${PORT_PROTON_TMP_PATH}"/*.bin
+    rm -f "${PORT_PROTON_TMP_PATH}"/*.foz
     return 0
 }
 
-pw_reinstall_pp () {
-    if [[ "${PW_REINSTALL_FROM_TERMINAL}" == 1 ]] ; then
+PP_reinstall_pp () {
+    if [[ "${PP_REINSTALL_FROM_TERMINAL}" == 1 ]] ; then
         read -p "Do you want to reinstall PortProton? (Y,y - Yes):   " -n 1 -r
         if [[ ! $REPLY =~ ^[Yy]$ ]]
         then
@@ -270,55 +278,46 @@ pw_reinstall_pp () {
     elif ! gui_question "${port_reinstall}" 
     then exit 1
     fi
-    pw_clear_pfx
-    try_remove_dir "${PORT_WINE_PATH}/data/dist"
-    try_remove_dir "${PORT_WINE_TMP_PATH}/VULKAN"
-    try_remove_file "${PORT_WINE_TMP_PATH}/scripts_update_notifier"
-    try_remove_file "${PORT_WINE_PATH}/data/user.conf"
-    echo 1000 > "${PORT_WINE_TMP_PATH}/scripts_ver"
+    PP_clear_pfx
+    try_remove_dir "${PORT_PROTON_PATH}/data/dist"
+    try_remove_dir "${PORT_PROTON_TMP_PATH}/VULKAN"
+    try_remove_file "${PORT_PROTON_TMP_PATH}/scripts_update_notifier"
+    try_remove_file "${PORT_PROTON_PATH}/data/user.conf"
+    echo 1000 > "${PORT_PROTON_TMP_PATH}/scripts_ver"
     echo
     echo "Restarting PP for reinstall files..."
-    /usr/bin/env bash -c ${pw_full_command_line[*]} &
+    /usr/bin/env bash -c ${PP_full_command_line[*]} &
     exit 0
 }
 
-check_user_conf () {
-    if [ ! -f "${USER_CONF}" ]; then
-        echo "#!/usr/bin/env bash" > "${USER_CONF}"
-        echo "# User overides db and var settings..." >> "${USER_CONF}"
-        chmod u+x "${USER_CONF}"
-    fi
-    return 0
-}
-
 init_wine_ver () {
-    if [[ -d "${PORT_WINE_PATH}/data/dist" ]] ; then
+    if [[ -d "${PORT_PROTON_PATH}/data/dist" ]] ; then
         orig_IFS="$IFS"
         IFS=$'\n'
-        for dist_dir in $(ls -1 "${PORT_WINE_PATH}/data/dist/") ; do
+        for dist_dir in $(ls -1 "${PORT_PROTON_PATH}/data/dist/") ; do
             dist_dir_new=`echo "${dist_dir}" | awk '$1=$1' | sed -e s/[[:blank:]]/_/g`
-            if [[ ! -d "${PORT_WINE_PATH}/data/dist/${dist_dir_new^^}" ]] ; then
-                mv -- "${PORT_WINE_PATH}/data/dist/$dist_dir" "${PORT_WINE_PATH}/data/dist/${dist_dir_new^^}"
+            if [[ ! -d "${PORT_PROTON_PATH}/data/dist/${dist_dir_new^^}" ]] ; then
+                mv -- "${PORT_PROTON_PATH}/data/dist/$dist_dir" "${PORT_PROTON_PATH}/data/dist/${dist_dir_new^^}"
             fi
         done
         IFS="$orig_IFS"
     fi
-    if [[ -z `ls "${PORT_WINE_PATH}/data/dist/" | grep "${PW_WINE_USE}"` ]] ; then
-        if [[ ! -z `echo "${PW_WINE_USE}" | grep "PROTON_LG"` ]] ; then
-            export PW_WINE_USE=PROTON_LG
+    if [[ -z `ls "${PORT_PROTON_PATH}/data/dist/" | grep "${PP_WINE_USE}"` ]] ; then
+        if [[ ! -z `echo "${PP_WINE_USE}" | grep "PROTON_LG"` ]] ; then
+            export PP_WINE_USE=PROTON_LG
         else
-            export PW_WINE_USE=PROTON_GE
+            export PP_WINE_USE=PROTON_GE
         fi
     fi
-    if [[ ! -z `echo "${PW_WINE_USE}" | grep "^PROTON_LG$"` ]] 
-    then export PW_WINE_USE="${PW_PROTON_LG_VER}"
-    elif [[ ! -z `echo "${PW_WINE_USE}" | grep "^PROTON_GE$"` ]]
-    then export PW_WINE_USE="${PW_PROTON_GE_VER}"
+    if [[ ! -z `echo "${PP_WINE_USE}" | grep "^PROTON_LG$"` ]] 
+    then export PP_WINE_USE="${PP_PROTON_LG_VER}"
+    elif [[ ! -z `echo "${PP_WINE_USE}" | grep "^PROTON_GE$"` ]]
+    then export PP_WINE_USE="${PP_PROTON_GE_VER}"
     fi
-    [ ! -z "${PW_WINE_VER}" ] && export PW_WINE_USE=`echo "${PW_WINE_VER}" | tr [[:lower:]] [[:upper:]]`
-    [ ! -z "${PW_WINE_USE}" ] && export PW_WINE_USE=`echo "${PW_WINE_USE}" | tr [[:lower:]] [[:upper:]]`
-    unset PW_WINE_VER
-    export WINEDIR="${PORT_WINE_PATH}/data/dist/${PW_WINE_USE}"
+    [ ! -z "${PP_WINE_VER}" ] && export PP_WINE_USE=`echo "${PP_WINE_VER}" | tr [[:lower:]] [[:upper:]]`
+    [ ! -z "${PP_WINE_USE}" ] && export PP_WINE_USE=`echo "${PP_WINE_USE}" | tr [[:lower:]] [[:upper:]]`
+    unset PP_WINE_VER
+    export WINEDIR="${PORT_PROTON_PATH}/data/dist/${PP_WINE_USE}"
     export WINE="${WINEDIR}/bin/wine"
     export WINELOADER="${WINEDIR}/bin/wine"
     export WINESERVER="${WINEDIR}/bin/wineserver"
@@ -352,7 +351,7 @@ init_wine_ver () {
         done
     fi
     if [[ -d "${WINEDIR}" ]] ; then
-        [[ ! -f "${WINEDIR}/version" ]] && echo "${PW_WINE_USE}" > "${WINEDIR}/version"
+        [[ ! -f "${WINEDIR}/version" ]] && echo "${PP_WINE_USE}" > "${WINEDIR}/version"
 
         # if [[ -d "${WINEDIR}/lib32/" ]] ; then
         #     mv -f "${WINEDIR}/lib" "${WINEDIR}/lib64"
@@ -372,13 +371,13 @@ init_wine_ver () {
             if check_symlink "${WINEDIR}/share/wine/${mono_gecko_chk}" ; then
                 echo "${WINEDIR}/share/wine/${mono_gecko_chk} is symlink. OK."
             elif [[ -d "${WINEDIR}/share/wine/${mono_gecko_chk}" ]] ; then
-                try_copy_dir "${WINEDIR}/share/wine/${mono_gecko_chk}" "${PORT_WINE_TMP_PATH}" | sszen
+                try_copy_dir "${WINEDIR}/share/wine/${mono_gecko_chk}" "${PORT_PROTON_TMP_PATH}" | sszen
                 try_remove_dir "${WINEDIR}/share/wine/${mono_gecko_chk}"
-                try_force_link_dir "${PORT_WINE_TMP_PATH}/${mono_gecko_chk}" "${WINEDIR}"/share/wine/
+                try_force_link_dir "${PORT_PROTON_TMP_PATH}/${mono_gecko_chk}" "${WINEDIR}"/share/wine/
                 echo "Copy ${WINEDIR}/share/wine/${mono_gecko_chk} to tmp and create symlink to ${WINEDIR}/share/wine/. OK."
             else
                 try_remove_dir "${WINEDIR}/share/wine/${mono_gecko_chk}"
-                try_force_link_dir "${PORT_WINE_TMP_PATH}/${mono_gecko_chk}" "${WINEDIR}"/share/wine
+                try_force_link_dir "${PORT_PROTON_TMP_PATH}/${mono_gecko_chk}" "${WINEDIR}"/share/wine
                 echo "${WINEDIR}/share/wine/${mono_gecko_chk} is broken symlink. Repair... OK."
             fi
         done
@@ -394,17 +393,17 @@ init_wine_ver () {
     return 0
 }
 
-pw_vkbasalt_check () {
-    if [[ "${ENABLE_VKBASALT}" == 1 ]] && [[ "${PW_VULKAN_USE}" != "0" ]] && [[ "${PW_VULKAN_USE}" != "3" ]] ; then
-        if [[ -z "${PW_VKBASALT_EFFECTS}" ]] ; then
-            export PW_VKBASALT_EFFECTS="Curves:cas" 
+PP_vkbasalt_check () {
+    if [[ "${ENABLE_VKBASALT}" == 1 ]] && [[ "${PP_VULKAN_USE}" != "0" ]] && [[ "${PP_VULKAN_USE}" != "3" ]] ; then
+        if [[ -z "${PP_VKBASALT_EFFECTS}" ]] ; then
+            export PP_VKBASALT_EFFECTS="Curves:cas" 
         fi
-        sed -ri "s/effects = .*/effects = ${PW_VKBASALT_EFFECTS}/g" "${PORT_WINE_PATH}/data/vkBasalt.conf"
-        if [[ -z "${PW_VKBASALT_FFX_CAS}" ]] ; then
-            export PW_VKBASALT_FFX_CAS="0.7" 
+        sed -ri "s/effects = .*/effects = ${PP_VKBASALT_EFFECTS}/g" "${PORT_PROTON_PATH}/data/vkBasalt.conf"
+        if [[ -z "${PP_VKBASALT_FFX_CAS}" ]] ; then
+            export PP_VKBASALT_FFX_CAS="0.7" 
         fi
-        sed -ri "s/casSharpness .*/casSharpness = ${PW_VKBASALT_FFX_CAS}/g" "${PORT_WINE_PATH}/data/vkBasalt.conf"
-        export VKBASALT_CONFIG_FILE="${PORT_WINE_PATH}/data/vkBasalt.conf"
+        sed -ri "s/casSharpness .*/casSharpness = ${PP_VKBASALT_FFX_CAS}/g" "${PORT_PROTON_PATH}/data/vkBasalt.conf"
+        export VKBASALT_CONFIG_FILE="${PORT_PROTON_PATH}/data/vkBasalt.conf"
         export ENABLE_VKBASALT=1
         print_info "vkBasalt is enabled"
     else
@@ -415,23 +414,23 @@ pw_vkbasalt_check () {
 }
 
 regdlloverrides () {
-    PW_DLL_EXE=`echo $@ | awk -F: '{print $1}'`
-    PW_DLL_LIB=`echo $@ | awk -F: '{print $2}' | awk -F= '{print $1}'`
-    PW_DLL_SET=`echo $@ | awk -F= '{print $NF}'`
-    case "${PW_DLL_SET}" in
-        "n,b") PW_DLL_IN_REG="native,builtin" ;;
-        "b,n") PW_DLL_IN_REG="builtin,native" ;;
-            "n") PW_DLL_IN_REG="native" ;;
-            "b") PW_DLL_IN_REG="builtin" ;;
-            *) PW_DLL_IN_REG="" ;;
+    PP_DLL_EXE=`echo $@ | awk -F: '{print $1}'`
+    PP_DLL_LIB=`echo $@ | awk -F: '{print $2}' | awk -F= '{print $1}'`
+    PP_DLL_SET=`echo $@ | awk -F= '{print $NF}'`
+    case "${PP_DLL_SET}" in
+        "n,b") PP_DLL_IN_REG="native,builtin" ;;
+        "b,n") PP_DLL_IN_REG="builtin,native" ;;
+            "n") PP_DLL_IN_REG="native" ;;
+            "b") PP_DLL_IN_REG="builtin" ;;
+            *) PP_DLL_IN_REG="" ;;
     esac
-    grep 'HKCU,Software\\Wine\\AppDefaults\\'"${PW_DLL_EXE}"'\\DllOverrides,'\"${PW_DLL_LIB}\",0x2,\"${PW_DLL_IN_REG}\" "${WINEDIR}/share/wine/wine.inf"
+    grep 'HKCU,Software\\Wine\\AppDefaults\\'"${PP_DLL_EXE}"'\\DllOverrides,'\"${PP_DLL_LIB}\",0x2,\"${PP_DLL_IN_REG}\" "${WINEDIR}/share/wine/wine.inf"
     if [[ "$?" != "0" ]] ; then
         grep "ProtonOverrides" "${WINEDIR}/share/wine/wine.inf"
         if [[ "$?" == "0" ]] ; then
-            sed -i "/\[ProtonOverrides\]/a HKCU,Software\\\Wine\\\AppDefaults\\\\${PW_DLL_EXE}\\\DllOverrides,\"${PW_DLL_LIB}\",0x2,\"${PW_DLL_IN_REG}\"" "${WINEDIR}/share/wine/wine.inf"
+            sed -i "/\[ProtonOverrides\]/a HKCU,Software\\\Wine\\\AppDefaults\\\\${PP_DLL_EXE}\\\DllOverrides,\"${PP_DLL_LIB}\",0x2,\"${PP_DLL_IN_REG}\"" "${WINEDIR}/share/wine/wine.inf"
         else
-            sed -i "/\[SteamClient.ntamd64\]/a HKCU,Software\\\Wine\\\AppDefaults\\\\${PW_DLL_EXE}\\\DllOverrides,\"${PW_DLL_LIB}\",0x2,\"${PW_DLL_IN_REG}\"" "${WINEDIR}/share/wine/wine.inf"
+            sed -i "/\[SteamClient.ntamd64\]/a HKCU,Software\\\Wine\\\AppDefaults\\\\${PP_DLL_EXE}\\\DllOverrides,\"${PP_DLL_LIB}\",0x2,\"${PP_DLL_IN_REG}\"" "${WINEDIR}/share/wine/wine.inf"
         fi
     fi
 }
@@ -447,17 +446,17 @@ export -f wait_wineserver
 kill_portwine () {
     wine_pids="`ls -l /proc/*/exe 2>/dev/null | grep -ie ${portname} | grep -E 'wine(64)?-preloader|wineserver' | awk -F/ '{print $3}'`"
     if  [ ! -z "${wine_pids}" ] ; then
-        for pw_kill_pids in ${wine_pids} ; do
-            if [ "`ps cax | grep ${pw_kill_pids}`" ] ; then
-                kill -n 9 ${pw_kill_pids} > /dev/null 2>&1  
+        for PP_kill_pids in ${wine_pids} ; do
+            if [ "`ps cax | grep ${PP_kill_pids}`" ] ; then
+                kill -n 9 ${PP_kill_pids} > /dev/null 2>&1  
             fi
         done
     fi
     bwrap_pids="`pgrep -a wrap | grep ${portname} | head -n 1 | awk '{print $1}'`"
     if  [ ! -z "${bwrap_pids}" ] ; then
-        for pw_kill_pids in ${bwrap_pids} ; do
-            if [ "`ps cax | grep ${pw_kill_pids}`" ] ; then
-                kill -n 9 ${pw_kill_pids} > /dev/null 2>&1
+        for PP_kill_pids in ${bwrap_pids} ; do
+            if [ "`ps cax | grep ${PP_kill_pids}`" ] ; then
+                kill -n 9 ${PP_kill_pids} > /dev/null 2>&1
             fi
         done
     fi
@@ -465,7 +464,7 @@ kill_portwine () {
 }
 export -f kill_portwine
 
-pw_kill_autostart () {
+PP_kill_autostart () {
     if [[ -z "${2}" ]]
     then SWAIT=5
     else SWAIT="${2}"
@@ -483,27 +482,27 @@ pw_kill_autostart () {
         fi
     done
 
-    if [[ ! -z "`ls "${PORT_WINE_PATH}/data/prefixes/${PW_PREFIX_NAME}"/drive_c/ | grep -m 1 ".tmp"`" ]] ; then
-        rm -f "${PORT_WINE_PATH}/data/prefixes/${PW_PREFIX_NAME}"/drive_c/*.tmp
+    if [[ ! -z "`ls "${PORT_PROTON_PATH}/data/prefixes/${PP_PREFIX_NAME}"/drive_c/ | grep -m 1 ".tmp"`" ]] ; then
+        rm -f "${PORT_PROTON_PATH}/data/prefixes/${PP_PREFIX_NAME}"/drive_c/*.tmp
     fi
 
     return 0
 }
-export -f pw_kill_autostart
+export -f PP_kill_autostart
 
 stop_portwine () { 
     if [ "$int_xneur" = "1"  ]; then
         xneur &
     fi
-    if [ ! -z ${PW_XKBD} ]; then
-        setxkbmap ${PW_XKBD}
+    if [ ! -z ${PP_XKBD} ]; then
+        setxkbmap ${PP_XKBD}
     fi
-    pw_stop_progress_bar
-    try_remove_file "${PORT_SCRIPTS_PATH}/0"
-    try_remove_file "${PORT_SCRIPTS_PATH}/1"
+    PP_stop_progress_bar
+    try_remove_file "${PORT_PROTON_SCRIPTS_PATH}/0"
+    try_remove_file "${PORT_PROTON_SCRIPTS_PATH}/1"
     kill_portwine &&
-    try_remove_dir "${PW_WINELIB}/var"
-    find "${PORT_WINE_PATH}/data/prefixes/${PW_PREFIX_NAME}/drive_c/" -maxdepth 1 -type f -name "*.tmp" -delete
+    try_remove_dir "${PP_WINELIB}/var"
+    find "${PORT_PROTON_PATH}/data/prefixes/${PP_PREFIX_NAME}/drive_c/" -maxdepth 1 -type f -name "*.tmp" -delete
     if [ ! -z "`pgrep -a yad | grep "\-\-notification" | awk '{print $1}'`" ] ; then
         kill -s SIGUSR1 "`pgrep -a yad | grep "\-\-notification" | awk '{print $1}'`" 2>/dev/null
     fi
@@ -514,164 +513,164 @@ stop_portwine () {
 }
 export -f stop_portwine
 
-pw_check_and_download_wine () {
-    [ ! -d "${PORT_WINE_PATH}/data/dist/" ] && create_new_dir "${PORT_WINE_PATH}/data/dist"
-    if [[ "${PW_WINE_USE}" == "GET-OTHER-WINE" ]] ; then
+PP_check_and_download_wine () {
+    [ ! -d "${PORT_PROTON_PATH}/data/dist/" ] && create_new_dir "${PORT_PROTON_PATH}/data/dist"
+    if [[ "${PP_WINE_USE}" == "GET-OTHER-WINE" ]] ; then
         gui_proton_downloader
     fi
-    if [[ ! -z `echo "${PW_WINE_USE}" | grep "^PROTON_LG$"` ]] 
-    then export PW_WINE_USE="${PW_PROTON_LG_VER}"
-    elif [[ ! -z `echo "${PW_WINE_USE}" | grep "^PROTON_GE$"` ]]
-    then export PW_WINE_USE="${PW_PROTON_GE_VER}"
+    if [[ ! -z `echo "${PP_WINE_USE}" | grep "^PROTON_LG$"` ]] 
+    then export PP_WINE_USE="${PP_PROTON_LG_VER}"
+    elif [[ ! -z `echo "${PP_WINE_USE}" | grep "^PROTON_GE$"` ]]
+    then export PP_WINE_USE="${PP_PROTON_GE_VER}"
     fi
-    if [ ! -d "${PORT_WINE_PATH}/data/dist/${PW_WINE_USE}" ] ; then
-        print_info "Download and install ${PW_WINE_USE}..."
-        if try_download "github.com/Castro-Fidel/wine_builds/releases/download/${PW_WINE_USE}/${PW_WINE_USE}.tar.xz" "${PORT_WINE_PATH}/data/tmp/${PW_WINE_USE}.tar.xz" ; then
-            if unpack_tar_xz "${PORT_WINE_PATH}/data/tmp/${PW_WINE_USE}.tar.xz" "${PORT_WINE_PATH}/data/dist/" ; then
-                echo "${PW_WINE_USE}" > "${PORT_WINE_PATH}/data/dist/${PW_WINE_USE}/version"
-                try_remove_file "${PORT_WINE_PATH}/data/tmp/${PW_WINE_USE}.tar.xz"
-                try_remove_dir "${PORT_WINE_PATH}/data/tmp/${PW_WINE_USE}"
+    if [ ! -d "${PORT_PROTON_PATH}/data/dist/${PP_WINE_USE}" ] ; then
+        print_info "Download and install ${PP_WINE_USE}..."
+        if try_download "github.com/Castro-Fidel/wine_builds/releases/download/${PP_WINE_USE}/${PP_WINE_USE}.tar.xz" "${PORT_PROTON_PATH}/data/tmp/${PP_WINE_USE}.tar.xz" ; then
+            if unpack_tar_xz "${PORT_PROTON_PATH}/data/tmp/${PP_WINE_USE}.tar.xz" "${PORT_PROTON_PATH}/data/dist/" ; then
+                echo "${PP_WINE_USE}" > "${PORT_PROTON_PATH}/data/dist/${PP_WINE_USE}/version"
+                try_remove_file "${PORT_PROTON_PATH}/data/tmp/${PP_WINE_USE}.tar.xz"
+                try_remove_dir "${PORT_PROTON_PATH}/data/tmp/${PP_WINE_USE}"
             else
-                try_remove_file "${PORT_WINE_PATH}/data/tmp/${PW_WINE_USE}.tar.xz"
-                try_remove_dir "${PORT_WINE_PATH}/data/tmp/${PW_WINE_USE}"
-                try_remove_dir "${PORT_WINE_PATH}/data/dist/${PW_WINE_USE}"
+                try_remove_file "${PORT_PROTON_PATH}/data/tmp/${PP_WINE_USE}.tar.xz"
+                try_remove_dir "${PORT_PROTON_PATH}/data/tmp/${PP_WINE_USE}"
+                try_remove_dir "${PORT_PROTON_PATH}/data/dist/${PP_WINE_USE}"
 
-                zenity_error_download && pw_check_and_download_wine
+                zenity_error_download && PP_check_and_download_wine
             fi
         else
-            zenity_error_download && pw_check_and_download_wine
+            zenity_error_download && PP_check_and_download_wine
         fi
     fi
     return 0
 }
 
-pw_check_and_download_dxvk_and_vkd3d () {
+PP_check_and_download_dxvk_and_vkd3d () {
     #Download stable and git version DXVK
     for DXVK_VAR_VER in "${DXVK_STABLE_VER}" "${DXVK_GIT_VER}" ; do
-        if [ ! -d "${PW_VULKAN_DIR}/dxvk-${DXVK_VAR_VER}" ] ; then
+        if [ ! -d "${PP_VULKAN_DIR}/dxvk-${DXVK_VAR_VER}" ] ; then
             print_info "Download and install DXVK v.${DXVK_VAR_VER}"
-            if try_download "https://github.com/Castro-Fidel/vulkan/releases/download/dxvk-${DXVK_VAR_VER}/dxvk-${DXVK_VAR_VER}.tar.xz" "${PW_VULKAN_DIR}/dxvk-${DXVK_VAR_VER}.tar.xz" ; then
-                if unpack_tar_xz "${PW_VULKAN_DIR}/dxvk-${DXVK_VAR_VER}.tar.xz" "${PW_VULKAN_DIR}" ; then
-                    try_remove_file "${PW_VULKAN_DIR}/dxvk-${DXVK_VAR_VER}.tar.xz"
+            if try_download "https://github.com/Castro-Fidel/vulkan/releases/download/dxvk-${DXVK_VAR_VER}/dxvk-${DXVK_VAR_VER}.tar.xz" "${PP_VULKAN_DIR}/dxvk-${DXVK_VAR_VER}.tar.xz" ; then
+                if unpack_tar_xz "${PP_VULKAN_DIR}/dxvk-${DXVK_VAR_VER}.tar.xz" "${PP_VULKAN_DIR}" ; then
+                    try_remove_file "${PP_VULKAN_DIR}/dxvk-${DXVK_VAR_VER}.tar.xz"
                 else
-                    try_remove_file "${PW_VULKAN_DIR}/dxvk-${DXVK_VAR_VER}.tar.xz"
+                    try_remove_file "${PP_VULKAN_DIR}/dxvk-${DXVK_VAR_VER}.tar.xz"
                     try_remove_dir dxvk-${DXVK_VAR_VER}
 
-                    zenity_error_download && pw_check_and_download_dxvk_and_vkd3d
+                    zenity_error_download && PP_check_and_download_dxvk_and_vkd3d
                 fi
-            elif try_download "https://github.com/doitsujin/dxvk/releases/download/v${DXVK_VAR_VER}/dxvk-${DXVK_VAR_VER}.tar.gz" "${PW_VULKAN_DIR}/dxvk-${DXVK_VAR_VER}.tar.gz" ; then
-                if unpack_tar_gz "${PW_VULKAN_DIR}/dxvk-${DXVK_VAR_VER}.tar.gz" "${PW_VULKAN_DIR}" ; then
-                    try_remove_file "${PW_VULKAN_DIR}/dxvk-${DXVK_VAR_VER}.tar.gz"
+            elif try_download "https://github.com/doitsujin/dxvk/releases/download/v${DXVK_VAR_VER}/dxvk-${DXVK_VAR_VER}.tar.gz" "${PP_VULKAN_DIR}/dxvk-${DXVK_VAR_VER}.tar.gz" ; then
+                if unpack_tar_gz "${PP_VULKAN_DIR}/dxvk-${DXVK_VAR_VER}.tar.gz" "${PP_VULKAN_DIR}" ; then
+                    try_remove_file "${PP_VULKAN_DIR}/dxvk-${DXVK_VAR_VER}.tar.gz"
                 else
-                    try_remove_file "${PW_VULKAN_DIR}/dxvk-${DXVK_VAR_VER}.tar.gz"
+                    try_remove_file "${PP_VULKAN_DIR}/dxvk-${DXVK_VAR_VER}.tar.gz"
                     try_remove_dir dxvk-${DXVK_VAR_VER}
 
-                    zenity_error_download && pw_check_and_download_dxvk_and_vkd3d
+                    zenity_error_download && PP_check_and_download_dxvk_and_vkd3d
                 fi
             else
-                zenity_error_download && pw_check_and_download_dxvk_and_vkd3d
+                zenity_error_download && PP_check_and_download_dxvk_and_vkd3d
             fi
         fi
     done
 
     #Download stable and git version VKD3D
     for VKD3D_VAR_VER in "${VKD3D_STABLE_VER}" "${VKD3D_GIT_VER}" ; do
-        if [ ! -d "${PW_VULKAN_DIR}/vkd3d-proton-${VKD3D_VAR_VER}" ] ; then
+        if [ ! -d "${PP_VULKAN_DIR}/vkd3d-proton-${VKD3D_VAR_VER}" ] ; then
             print_info "Download and install VKD3D-PROTON v.${VKD3D_VAR_VER}"
-            if try_download "https://github.com/Castro-Fidel/vulkan/releases/download/vkd3d-proton-${VKD3D_VAR_VER}/vkd3d-proton-${VKD3D_VAR_VER}.tar.xz" "${PW_VULKAN_DIR}/vkd3d-proton-${VKD3D_VAR_VER}.tar.xz" ; then
-                if unpack_tar_xz "${PW_VULKAN_DIR}/vkd3d-proton-${VKD3D_VAR_VER}.tar.xz" "${PW_VULKAN_DIR}" ; then
-                    try_remove_file "${PW_VULKAN_DIR}/vkd3d-proton-${VKD3D_VAR_VER}.tar.xz"
+            if try_download "https://github.com/Castro-Fidel/vulkan/releases/download/vkd3d-proton-${VKD3D_VAR_VER}/vkd3d-proton-${VKD3D_VAR_VER}.tar.xz" "${PP_VULKAN_DIR}/vkd3d-proton-${VKD3D_VAR_VER}.tar.xz" ; then
+                if unpack_tar_xz "${PP_VULKAN_DIR}/vkd3d-proton-${VKD3D_VAR_VER}.tar.xz" "${PP_VULKAN_DIR}" ; then
+                    try_remove_file "${PP_VULKAN_DIR}/vkd3d-proton-${VKD3D_VAR_VER}.tar.xz"
                 else
-                    try_remove_file "${PW_VULKAN_DIR}/vkd3d-proton-${VKD3D_VAR_VER}.tar.xz"
+                    try_remove_file "${PP_VULKAN_DIR}/vkd3d-proton-${VKD3D_VAR_VER}.tar.xz"
                     try_remove_dir vkd3d-proton-${VKD3D_VAR_VER}
 
-                    zenity_error_download && pw_check_and_download_dxvk_and_vkd3d
+                    zenity_error_download && PP_check_and_download_dxvk_and_vkd3d
                 fi
-            elif try_download "https://github.com/HansKristian-Work/vkd3d-proton/releases/download/v${VKD3D_VAR_VER}/vkd3d-proton-${VKD3D_VAR_VER}.tar.zst" "${PW_VULKAN_DIR}/vkd3d-proton-${VKD3D_VAR_VER}.tar.zst" ; then
-                if unpack_tar_zst "${PW_VULKAN_DIR}/vkd3d-proton-${VKD3D_VAR_VER}.tar.zst" "${PW_VULKAN_DIR}" ; then
-                    try_remove_file "${PW_VULKAN_DIR}/vkd3d-proton-${VKD3D_VAR_VER}.tar.zst"
+            elif try_download "https://github.com/HansKristian-Work/vkd3d-proton/releases/download/v${VKD3D_VAR_VER}/vkd3d-proton-${VKD3D_VAR_VER}.tar.zst" "${PP_VULKAN_DIR}/vkd3d-proton-${VKD3D_VAR_VER}.tar.zst" ; then
+                if unpack_tar_zst "${PP_VULKAN_DIR}/vkd3d-proton-${VKD3D_VAR_VER}.tar.zst" "${PP_VULKAN_DIR}" ; then
+                    try_remove_file "${PP_VULKAN_DIR}/vkd3d-proton-${VKD3D_VAR_VER}.tar.zst"
                 else
-                    try_remove_file "${PW_VULKAN_DIR}/vkd3d-proton-${VKD3D_VAR_VER}.tar.zst"
+                    try_remove_file "${PP_VULKAN_DIR}/vkd3d-proton-${VKD3D_VAR_VER}.tar.zst"
                     try_remove_dir vkd3d-proton-${VKD3D_VAR_VER}
 
-                    zenity_error_download && pw_check_and_download_dxvk_and_vkd3d
+                    zenity_error_download && PP_check_and_download_dxvk_and_vkd3d
                 fi
             else
-                zenity_error_download && pw_check_and_download_dxvk_and_vkd3d
+                zenity_error_download && PP_check_and_download_dxvk_and_vkd3d
             fi
         fi
     done
     return 0
 }
 
-pw_check_and_download_plugins () {
-    if [ ! -z "`ls ${PORT_WINE_TMP_PATH} | grep plugins_v | grep -v plugins${PW_PLUGINS_VER}`" ] ; then
-        for RM_PLUGINS in `ls ${PORT_WINE_TMP_PATH} | grep plugins_v | grep -v plugins${PW_PLUGINS_VER}`
-        do try_remove_dir "${PORT_WINE_TMP_PATH}/${RM_PLUGINS}"
+PP_check_and_download_plugins () {
+    if [ ! -z "`ls ${PORT_PROTON_TMP_PATH} | grep plugins_v | grep -v plugins${PP_PLUGINS_VER}`" ] ; then
+        for RM_PLUGINS in `ls ${PORT_PROTON_TMP_PATH} | grep plugins_v | grep -v plugins${PP_PLUGINS_VER}`
+        do try_remove_dir "${PORT_PROTON_TMP_PATH}/${RM_PLUGINS}"
         done
     fi
-    if [[ ! -d "${PW_PLUGINS_PATH}/BattlEye_Runtime" || ! -d "${PW_PLUGINS_PATH}/fake_dlss" \
-    || ! -d "${PW_PLUGINS_PATH}/nvapi" || ! -d "${PW_PLUGINS_PATH}/nvml" ]]
+    if [[ ! -d "${PP_PLUGINS_PATH}/BattlEye_Runtime" || ! -d "${PP_PLUGINS_PATH}/fake_dlss" \
+    || ! -d "${PP_PLUGINS_PATH}/nvapi" || ! -d "${PP_PLUGINS_PATH}/nvml" ]]
     then
-        print_info "Download and install plugins${PW_PLUGINS_VER}..."
-        if try_download "github.com/Castro-Fidel/wine_builds/releases/download/plugins${PW_PLUGINS_VER}/plugins${PW_PLUGINS_VER}.tar.xz" "${PORT_WINE_TMP_PATH}/plugins${PW_PLUGINS_VER}.tar.xz" ; then
-            if unpack_tar_xz "${PORT_WINE_TMP_PATH}/plugins${PW_PLUGINS_VER}.tar.xz" "${PORT_WINE_TMP_PATH}" ; then
-                try_remove_file "${PORT_WINE_TMP_PATH}/plugins${PW_PLUGINS_VER}.tar.xz" 
+        print_info "Download and install plugins${PP_PLUGINS_VER}..."
+        if try_download "github.com/Castro-Fidel/wine_builds/releases/download/plugins${PP_PLUGINS_VER}/plugins${PP_PLUGINS_VER}.tar.xz" "${PORT_PROTON_TMP_PATH}/plugins${PP_PLUGINS_VER}.tar.xz" ; then
+            if unpack_tar_xz "${PORT_PROTON_TMP_PATH}/plugins${PP_PLUGINS_VER}.tar.xz" "${PORT_PROTON_TMP_PATH}" ; then
+                try_remove_file "${PORT_PROTON_TMP_PATH}/plugins${PP_PLUGINS_VER}.tar.xz" 
             else
-                try_remove_file "${PORT_WINE_TMP_PATH}/plugins${PW_PLUGINS_VER}.tar.xz"
-                try_remove_dir "${PORT_WINE_TMP_PATH}/plugins${PW_PLUGINS_VER}"
+                try_remove_file "${PORT_PROTON_TMP_PATH}/plugins${PP_PLUGINS_VER}.tar.xz"
+                try_remove_dir "${PORT_PROTON_TMP_PATH}/plugins${PP_PLUGINS_VER}"
 
-                zenity_error_download && pw_check_and_download_wine
+                zenity_error_download && PP_check_and_download_wine
             fi
         else
-            zenity_error_download && pw_check_and_download_wine
+            zenity_error_download && PP_check_and_download_wine
         fi
     fi
     return 0
 }
 
-pw_init_db () {
+PP_init_db () {
     if [[ ! -z "${portwine_exe}" ]] ; then
         export PORTWINE_DB=`echo "${portwine_exe}" | awk -F '/' 'NF>1{print $NF}' | sed s/".exe"/""/gi`
         if [[ -f "${portwine_exe}".ppdb ]] && [[ "${PORTWINE_DB}" != "RiotClientServices" ]] ; then
             export PORTWINE_DB_FILE="${portwine_exe}".ppdb
             . "${PORTWINE_DB_FILE}"
-            if [[ -z "`ls -p "${PORT_WINE_PATH}/prefixes/" | grep -e "^${PW_PREFIX_NAME}/"`" ]] ; then
-                export PW_PREFIX_NAME=`echo "${portwine_exe}" | awk -F"/prefixes/" '{print $2}' | awk -F"/" '{print $1}'`
-                edit_db_from_gui PW_PREFIX_NAME
+            if [[ -z "`ls -p "${PORT_PROTON_PATH}/prefixes/" | grep -e "^${PP_PREFIX_NAME}/"`" ]] ; then
+                export PP_PREFIX_NAME=`echo "${portwine_exe}" | awk -F"/prefixes/" '{print $2}' | awk -F"/" '{print $1}'`
+                edit_db_from_gui PP_PREFIX_NAME
             fi
         else
             orig_IFS="$IFS"
             IFS=$'\n'
-            PW_FIND_DB_FILE=`grep -ilw "#${PORTWINE_DB}.exe" "${PORT_SCRIPTS_PATH}/portwine_db"/* | sed s/".exe"/""/gi`
-            if [[ `echo "$PW_FIND_DB_FILE" | wc -l` -gt 1 ]] ; then
+            PP_FIND_DB_FILE=`grep -ilw "#${PORTWINE_DB}.exe" "${PORT_PROTON_SCRIPTS_PATH}/portwine_db"/* | sed s/".exe"/""/gi`
+            if [[ `echo "$PP_FIND_DB_FILE" | wc -l` -gt 1 ]] ; then
                 unset ADD_CB_DBFILE
-                for PW_CHECK_DB_FILE in $PW_FIND_DB_FILE ; do
+                for PP_CHECK_DB_FILE in $PP_FIND_DB_FILE ; do
                     if [[ -z "${ADD_CB_DBFILE}" ]] ; then
-                        export ADD_CB_DBFILE="${PW_CHECK_DB_FILE}"
+                        export ADD_CB_DBFILE="${PP_CHECK_DB_FILE}"
                     else
-                        export ADD_CB_DBFILE="${PW_CHECK_DB_FILE}!${ADD_CB_DBFILE}"
+                        export ADD_CB_DBFILE="${PP_CHECK_DB_FILE}!${ADD_CB_DBFILE}"
                     fi
                 done
-                PORTWINE_DB_FILE=`yad --text-align=center --text "${PW_SELECTION_DB_LOC}" --borders=15 --form --center  \
-                --title "Database file selection..." --window-icon="$PW_GUI_ICON_PATH/port_proton.png"  --form --separator="" \
+                PORTWINE_DB_FILE=`yad --text-align=center --text "${PP_SELECTION_DB_LOC}" --borders=15 --form --center  \
+                --title "Database file selection..." --window-icon="$PP_GUI_ICON_PATH/port_proton.png"  --form --separator="" \
                 --field="DB FILE: :CB" "${ADD_CB_DBFILE}"`
                 if [[ "$?" == "1" || "$?" == "252" ]] ; then exit 0 ; fi
-                # sed -i 's/ PP_/ PW_/g' "${PORTWINE_DB_FILE}"
-            elif [[ `echo "$PW_FIND_DB_FILE" | wc -l` -eq 1 ]] ; then
-                PORTWINE_DB_FILE="${PW_FIND_DB_FILE}"
-                # sed -i 's/ PP_/ PW_/g' "${PORTWINE_DB_FILE}"
+                # sed -i 's/ PP_/ PP_/g' "${PORTWINE_DB_FILE}"
+            elif [[ `echo "$PP_FIND_DB_FILE" | wc -l` -eq 1 ]] ; then
+                PORTWINE_DB_FILE="${PP_FIND_DB_FILE}"
+                # sed -i 's/ PP_/ PP_/g' "${PORTWINE_DB_FILE}"
             fi
             IFS="$orig_IFS"
-            if [[ -f "${PW_FIND_DB_FILE}" ]] && [[ -z `grep "^export PW_DISABLED_CREATE_DB=1" "${PW_FIND_DB_FILE}"` ]] ; then
-                try_copy_file "${PW_FIND_DB_FILE}" "${portwine_exe}".ppdb
+            if [[ -f "${PP_FIND_DB_FILE}" ]] && [[ -z `grep "^export PP_DISABLED_CREATE_DB=1" "${PP_FIND_DB_FILE}"` ]] ; then
+                try_copy_file "${PP_FIND_DB_FILE}" "${portwine_exe}".ppdb
                 export PORTWINE_DB_FILE="${portwine_exe}".ppdb
             fi
             if [[ ! -z `echo "${portwine_exe}" | grep "/data/prefixes/"` ]] && \
                 [[ -z `echo "${portwine_exe}" | grep "/data/prefixes/DEFAULT/"` ]]
             then 
-                export PW_PREFIX_NAME=`echo "${portwine_exe}" | awk -F"/prefixes/" '{print $2}' | awk -F"/" '{print $1}'`
-                edit_db_from_gui PW_PREFIX_NAME
+                export PP_PREFIX_NAME=`echo "${portwine_exe}" | awk -F"/prefixes/" '{print $2}' | awk -F"/" '{print $1}'`
+                edit_db_from_gui PP_PREFIX_NAME
             fi
         fi
         if [ ! -z "${PORTWINE_DB_FILE}" ]; then
@@ -686,27 +685,27 @@ pw_init_db () {
     return 0
 }
 
-pw_port_update () {
+PP_port_update () {
     ###SCRIPTS UPDATE###
-    if [ ! -f "${PORT_WINE_TMP_PATH}/scripts_ver" ] ; then
-        echo "2022" > "${PORT_WINE_TMP_PATH}/scripts_ver"
+    if [ ! -f "${PORT_PROTON_TMP_PATH}/scripts_ver" ] ; then
+        echo "2022" > "${PORT_PROTON_TMP_PATH}/scripts_ver"
     fi
-    export scripts_install_ver=`cat "${PORT_WINE_TMP_PATH}/scripts_ver" | head -n 1`
+    export scripts_install_ver=`cat "${PORT_PROTON_TMP_PATH}/scripts_ver" | head -n 1`
     print_info "Check update..."
-    curl -s --list-only https://raw.githubusercontent.com/Castro-Fidel/PortWINE/master/data_from_portwine/scripts/var > "${PORT_WINE_TMP_PATH}/curent_var_ver"
+    curl -s --list-only https://raw.githubusercontent.com/Castro-Fidel/PortWINE/master/data_from_portwine/scripts/var > "${PORT_PROTON_TMP_PATH}/curent_var_ver"
     [[ $? == 0 ]] && print_info "OK!" || print_info "ERROR!"
-    [[ ! -f "${PORT_WINE_TMP_PATH}/scripts_update_notifier" ]] && echo "1" > "${PORT_WINE_TMP_PATH}/scripts_update_notifier"
-    read "scripts_update_not" < "${PORT_WINE_TMP_PATH}/scripts_update_notifier"
+    [[ ! -f "${PORT_PROTON_TMP_PATH}/scripts_update_notifier" ]] && echo "1" > "${PORT_PROTON_TMP_PATH}/scripts_update_notifier"
+    read "scripts_update_not" < "${PORT_PROTON_TMP_PATH}/scripts_update_notifier"
     if [[ "${scripts_update_not}" == "1" ]] ; then
-        export scripts_current_ver=`cat "${PORT_WINE_TMP_PATH}/curent_var_ver" | grep SCRIPTS_NEXT_VERSION | awk -F "=" '{print $2}'`
+        export scripts_current_ver=`cat "${PORT_PROTON_TMP_PATH}/curent_var_ver" | grep SCRIPTS_NEXT_VERSION | awk -F "=" '{print $2}'`
         print_info "Scripts version in github = ${scripts_current_ver}"
         print_info "Scripts version local = ${scripts_install_ver}"
         if [[ ! -z "${scripts_current_ver}" ]] &&  [[ "${scripts_current_ver}" -gt "${scripts_install_ver}" ]] ; then
-            if [[ -f "${PW_WINELIB}/portable/bin/yad" ]] ; then
-                export pw_yad="${PW_WINELIB}/portable/bin/yad"
-                curl -s --list-only "https://raw.githubusercontent.com/Castro-Fidel/PortWINE/master/data_from_portwine/${PW_CHANGELOG_FILE}" | tee "${PORT_WINE_TMP_PATH}/curent_var_ver" | sszen
-                CHANGLOG_NEWS=`cat "${PORT_WINE_TMP_PATH}/curent_var_ver" | sed "/Scripts version ${scripts_install_ver}/,$ d" | sed '1,/---/ d' `
-                xcsd=`yad --title "${scripts_upd2} v.${scripts_current_ver}" --window-icon="$PW_GUI_ICON_PATH/port_proton.png" \
+            if [[ -f "${PP_WINELIB}/portable/bin/yad" ]] ; then
+                export PP_yad="${PP_WINELIB}/portable/bin/yad"
+                curl -s --list-only "https://raw.githubusercontent.com/Castro-Fidel/PortWINE/master/data_from_portwine/${PP_CHANGELOG_FILE}" | tee "${PORT_PROTON_TMP_PATH}/curent_var_ver" | sszen
+                CHANGLOG_NEWS=`cat "${PORT_PROTON_TMP_PATH}/curent_var_ver" | sed "/Scripts version ${scripts_install_ver}/,$ d" | sed '1,/---/ d' `
+                xcsd=`yad --title "${scripts_upd2} v.${scripts_current_ver}" --window-icon="$PP_GUI_ICON_PATH/port_proton.png" \
                 --borders=5 --form --separator='%%%' --width=1000 --height=350 --center \
                 --field=":TXT" "${CHANGLOG_NEWS}" \
                 --field="   ${scripts_upd3} :CB" "${scripts_upd4}!${scripts_upd5}!${scripts_upd6}" `
@@ -723,36 +722,36 @@ pw_port_update () {
                 "${scripts_upd4}")
                     echo "######################################################"
                     print_info "Update scripts..."
-                    try_remove_file "${PORT_WINE_TMP_PATH}/PortWINE-master.tar.gz"
-                    if try_download "github.com/Castro-Fidel/PortWINE/archive/refs/heads/master.tar.gz" "${PORT_WINE_TMP_PATH}/PortWINE-master.tar.gz" ; then
-                        if unpack_tar_gz "${PORT_WINE_TMP_PATH}/PortWINE-master.tar.gz" "${PORT_WINE_TMP_PATH}"
+                    try_remove_file "${PORT_PROTON_TMP_PATH}/PortWINE-master.tar.gz"
+                    if try_download "github.com/Castro-Fidel/PortWINE/archive/refs/heads/master.tar.gz" "${PORT_PROTON_TMP_PATH}/PortWINE-master.tar.gz" ; then
+                        if unpack_tar_gz "${PORT_PROTON_TMP_PATH}/PortWINE-master.tar.gz" "${PORT_PROTON_TMP_PATH}"
                         then
-                            create_new_dir "${PORT_WINE_TMP_PATH}/scripts_backup"
-                            cd "${PORT_WINE_PATH}/data/"
-                            tar -czpf "${PORT_WINE_TMP_PATH}/scripts_backup/scripts_v.${scripts_install_ver}.tar.gz" ./scripts ./img \
+                            create_new_dir "${PORT_PROTON_TMP_PATH}/scripts_backup"
+                            cd "${PORT_PROTON_PATH}/data/"
+                            tar -czpf "${PORT_PROTON_TMP_PATH}/scripts_backup/scripts_v.${scripts_install_ver}.tar.gz" ./scripts ./img \
                             ./changelog* ./dxvk.conf ./vkBasalt.conf ./tmp/scripts_ver
-                            cp -fr "${PORT_WINE_TMP_PATH}/PortWINE-master/data_from_portwine/"* "${PORT_WINE_PATH}/data/"
-                            try_remove_file "${PORT_WINE_TMP_PATH}/PortWINE-master.tar.gz"
-                            try_remove_dir "${PORT_WINE_TMP_PATH}/PortWINE-master/"
-                            echo "${scripts_current_ver}" > "${PORT_WINE_TMP_PATH}/scripts_ver"
+                            cp -fr "${PORT_PROTON_TMP_PATH}/PortWINE-master/data_from_portwine/"* "${PORT_PROTON_PATH}/data/"
+                            try_remove_file "${PORT_PROTON_TMP_PATH}/PortWINE-master.tar.gz"
+                            try_remove_dir "${PORT_PROTON_TMP_PATH}/PortWINE-master/"
+                            echo "${scripts_current_ver}" > "${PORT_PROTON_TMP_PATH}/scripts_ver"
                             if [[ -z yad ]] ; then
                                 zenity --title="Changelog" --text-info --width=1200 --height=550 \
-                                --filename="${PORT_WINE_PATH}/data/${PW_CHANGELOG_FILE}"
+                                --filename="${PORT_PROTON_PATH}/data/${PP_CHANGELOG_FILE}"
                             fi 
-                            [ "$?" == 0 ] && echo "Restarting PP after update..." && /usr/bin/env bash -c ${pw_full_command_line[*]} &
+                            [ "$?" == 0 ] && echo "Restarting PP after update..." && /usr/bin/env bash -c ${PP_full_command_line[*]} &
                             exit 0
                         fi
                     else
-                        zenity_error_download && pw_scripts_update
+                        zenity_error_download && PP_scripts_update
                     fi ;;
                 "${scripts_upd5}")
                     echo " " ;;
                 "${scripts_upd6}")
-                    echo "0" > "${PORT_WINE_TMP_PATH}/scripts_update_notifier" ;;
+                    echo "0" > "${PORT_PROTON_TMP_PATH}/scripts_update_notifier" ;;
             esac
         fi
     fi
-    try_remove_file "${PORT_WINE_TMP_PATH}/curent_var_ver"
+    try_remove_file "${PORT_PROTON_TMP_PATH}/curent_var_ver"
     return 0
 }
 
@@ -761,19 +760,19 @@ update_winetricks () {
     W_TRX_URL="https://raw.githubusercontent.com/Winetricks/winetricks/master/src/winetricks"
     W_TRX_EXT_VER="$(curl -s --list-only ${W_TRX_URL} | grep -i 'WINETRICKS_VERSION=' | sed 's/WINETRICKS_VERSION=//')"
     print_info "Version winetricks on server: ${W_TRX_EXT_VER}"
-    W_TRX_INT_VER="$(cat "${PORT_WINE_TMP_PATH}/winetricks" | grep -i 'WINETRICKS_VERSION=' | sed 's/WINETRICKS_VERSION=//')"
+    W_TRX_INT_VER="$(cat "${PORT_PROTON_TMP_PATH}/winetricks" | grep -i 'WINETRICKS_VERSION=' | sed 's/WINETRICKS_VERSION=//')"
     print_info "Version winetricks in port: ${W_TRX_INT_VER}"
-    if [[ ! -f "${PORT_WINE_TMP_PATH}/winetricks" && ! -z "$W_TRX_EXT_VER" ]] || [[ "$W_TRX_INT_VER" != "$W_TRX_EXT_VER" && ! -z "$W_TRX_EXT_VER" ]]; then
-        if try_download "${W_TRX_URL}" "${PORT_WINE_TMP_PATH}/winetricks_new" ; then
-            mv -f "${PORT_WINE_TMP_PATH}/winetricks_new" "${PORT_WINE_TMP_PATH}/winetricks"
-            W_TRX_INT_VER="$(cat "${PORT_WINE_TMP_PATH}/winetricks" | grep -i 'WINETRICKS_VERSION=' | sed 's/WINETRICKS_VERSION=//')" && print_info "Winetricks version in port has been updated (${W_TRX_INT_VER})" 
-            chmod u+x "${PORT_WINE_TMP_PATH}/winetricks"
+    if [[ ! -f "${PORT_PROTON_TMP_PATH}/winetricks" && ! -z "$W_TRX_EXT_VER" ]] || [[ "$W_TRX_INT_VER" != "$W_TRX_EXT_VER" && ! -z "$W_TRX_EXT_VER" ]]; then
+        if try_download "${W_TRX_URL}" "${PORT_PROTON_TMP_PATH}/winetricks_new" ; then
+            mv -f "${PORT_PROTON_TMP_PATH}/winetricks_new" "${PORT_PROTON_TMP_PATH}/winetricks"
+            W_TRX_INT_VER="$(cat "${PORT_PROTON_TMP_PATH}/winetricks" | grep -i 'WINETRICKS_VERSION=' | sed 's/WINETRICKS_VERSION=//')" && print_info "Winetricks version in port has been updated (${W_TRX_INT_VER})" 
+            chmod u+x "${PORT_PROTON_TMP_PATH}/winetricks"
         fi
     fi
-    if  [ -f "${PORT_WINE_TMP_PATH}/winetricks" ] ; then
-        sed -i 's/w_metadata vcrun2015 dlls \\/w_metadata !dont_use_2015! dlls \\/' "${PORT_WINE_TMP_PATH}/winetricks"
-        sed -i 's/w_metadata vcrun2017 dlls \\/w_metadata !dont_use_2017! dlls \\/' "${PORT_WINE_TMP_PATH}/winetricks"
-        sed -i 's/w_metadata vcrun2019 dlls \\/w_metadata !dont_use_2019! dlls \\/' "${PORT_WINE_TMP_PATH}/winetricks"
+    if  [ -f "${PORT_PROTON_TMP_PATH}/winetricks" ] ; then
+        sed -i 's/w_metadata vcrun2015 dlls \\/w_metadata !dont_use_2015! dlls \\/' "${PORT_PROTON_TMP_PATH}/winetricks"
+        sed -i 's/w_metadata vcrun2017 dlls \\/w_metadata !dont_use_2017! dlls \\/' "${PORT_PROTON_TMP_PATH}/winetricks"
+        sed -i 's/w_metadata vcrun2019 dlls \\/w_metadata !dont_use_2019! dlls \\/' "${PORT_PROTON_TMP_PATH}/winetricks"
     fi
     return 0
 }
@@ -795,79 +794,79 @@ edit_db_from_gui () {
     return 0
 }
 
-pw_create_gui_png () {
+PP_create_gui_png () {
     if [ ! -z "${PORTWINE_CREATE_SHORTCUT_NAME}" ] ; then
         export PORTPROTON_NAME="${PORTWINE_CREATE_SHORTCUT_NAME}"
     else
         export PORTPROTON_NAME="$(basename "${portwine_exe}" | sed s/".exe"/""/gi )"
     fi
-    PW_RESIZE_TO=128
-    try_remove_file "${PORT_WINE_PATH}/data/img/setup.png"
-    if [[ -x "`which wrestool 2>/dev/null`" ]] && [[ ! -f "${PORT_WINE_PATH}/data/img/${PORTPROTON_NAME}.png" ]] ; then
-        try_remove_dir "${PORT_WINE_TMP_PATH}/tmp_img"
-        create_new_dir "${PORT_WINE_TMP_PATH}/tmp_img"
-        wrestool -x --output="${PORT_WINE_TMP_PATH}/tmp_img/" -t14 "${portwine_exe}"
-        cp "$(ls -S -1 "${PORT_WINE_TMP_PATH}/tmp_img/"*".ico" | head -n 1)" "${PORT_WINE_TMP_PATH}/tmp_img/${PORTPROTON_NAME}.ico"
-        icotool -x --width=${PW_RESIZE_TO} --height=${PW_RESIZE_TO} --output="${PORT_WINE_TMP_PATH}/tmp_img/" "${PORT_WINE_TMP_PATH}/tmp_img/${PORTPROTON_NAME}.ico"
-        if [[ ! -f "$(ls -S -1 "${PORT_WINE_TMP_PATH}/tmp_img/"*".png" | grep "${PW_RESIZE_TO}x${PW_RESIZE_TO}")" ]] ; then 
-            icotool -x --output="${PORT_WINE_TMP_PATH}/tmp_img/" "${PORT_WINE_TMP_PATH}/tmp_img/${PORTPROTON_NAME}.ico"
-            cp "$(ls -S -1 "${PORT_WINE_TMP_PATH}/tmp_img/"*".png" | head -n 1)" "${PORT_WINE_TMP_PATH}/tmp_img/${PORTPROTON_NAME}.png"
+    PP_RESIZE_TO=128
+    try_remove_file "${PORT_PROTON_PATH}/data/img/setup.png"
+    if [[ -x "`which wrestool 2>/dev/null`" ]] && [[ ! -f "${PORT_PROTON_PATH}/data/img/${PORTPROTON_NAME}.png" ]] ; then
+        try_remove_dir "${PORT_PROTON_TMP_PATH}/tmp_img"
+        create_new_dir "${PORT_PROTON_TMP_PATH}/tmp_img"
+        wrestool -x --output="${PORT_PROTON_TMP_PATH}/tmp_img/" -t14 "${portwine_exe}"
+        cp "$(ls -S -1 "${PORT_PROTON_TMP_PATH}/tmp_img/"*".ico" | head -n 1)" "${PORT_PROTON_TMP_PATH}/tmp_img/${PORTPROTON_NAME}.ico"
+        icotool -x --width=${PP_RESIZE_TO} --height=${PP_RESIZE_TO} --output="${PORT_PROTON_TMP_PATH}/tmp_img/" "${PORT_PROTON_TMP_PATH}/tmp_img/${PORTPROTON_NAME}.ico"
+        if [[ ! -f "$(ls -S -1 "${PORT_PROTON_TMP_PATH}/tmp_img/"*".png" | grep "${PP_RESIZE_TO}x${PP_RESIZE_TO}")" ]] ; then 
+            icotool -x --output="${PORT_PROTON_TMP_PATH}/tmp_img/" "${PORT_PROTON_TMP_PATH}/tmp_img/${PORTPROTON_NAME}.ico"
+            cp "$(ls -S -1 "${PORT_PROTON_TMP_PATH}/tmp_img/"*".png" | head -n 1)" "${PORT_PROTON_TMP_PATH}/tmp_img/${PORTPROTON_NAME}.png"
         else
-            cp "$(ls -S -1 "${PORT_WINE_TMP_PATH}/tmp_img/"*".png" | grep "${PW_RESIZE_TO}x${PW_RESIZE_TO}" | head -n 1)" "${PORT_WINE_TMP_PATH}/tmp_img/${PORTPROTON_NAME}.png"
+            cp "$(ls -S -1 "${PORT_PROTON_TMP_PATH}/tmp_img/"*".png" | grep "${PP_RESIZE_TO}x${PP_RESIZE_TO}" | head -n 1)" "${PORT_PROTON_TMP_PATH}/tmp_img/${PORTPROTON_NAME}.png"
         fi
-        cp -f "${PORT_WINE_TMP_PATH}/tmp_img/${PORTPROTON_NAME}.png" "${PORT_WINE_PATH}/data/img/${PORTPROTON_NAME}.png"
+        cp -f "${PORT_PROTON_TMP_PATH}/tmp_img/${PORTPROTON_NAME}.png" "${PORT_PROTON_PATH}/data/img/${PORTPROTON_NAME}.png"
     fi
-    if [[ -z "`file "${PORT_WINE_PATH}/data/img/${PORTPROTON_NAME}.png" | grep "${PW_RESIZE_TO} x ${PW_RESIZE_TO}"`" ]] && \
-       [[ -x "`which "convert" 2>/dev/null`" ]] && [[ -f "${PORT_WINE_PATH}/data/img/${PORTPROTON_NAME}.png" ]] ; then
-        convert "${PORT_WINE_PATH}/data/img/${PORTPROTON_NAME}.png" -resize ${PW_RESIZE_TO}x${PW_RESIZE_TO} "${PORT_WINE_PATH}/data/img/${PORTPROTON_NAME}.png" 
+    if [[ -z "`file "${PORT_PROTON_PATH}/data/img/${PORTPROTON_NAME}.png" | grep "${PP_RESIZE_TO} x ${PP_RESIZE_TO}"`" ]] && \
+       [[ -x "`which "convert" 2>/dev/null`" ]] && [[ -f "${PORT_PROTON_PATH}/data/img/${PORTPROTON_NAME}.png" ]] ; then
+        convert "${PORT_PROTON_PATH}/data/img/${PORTPROTON_NAME}.png" -resize ${PP_RESIZE_TO}x${PP_RESIZE_TO} "${PORT_PROTON_PATH}/data/img/${PORTPROTON_NAME}.png" 
     fi
-    if [[ -z "${PW_ICON_FOR_YAD}" ]] ; then
-        if [[ ! -z "`file "${PORT_WINE_PATH}/data/img/${PORTPROTON_NAME}.png" | grep "${PW_RESIZE_TO} x ${PW_RESIZE_TO}"`" ]] ; then
-            export PW_ICON_FOR_YAD="${PORT_WINE_PATH}/data/img/${PORTPROTON_NAME}.png" 
+    if [[ -z "${PP_ICON_FOR_YAD}" ]] ; then
+        if [[ ! -z "`file "${PORT_PROTON_PATH}/data/img/${PORTPROTON_NAME}.png" | grep "${PP_RESIZE_TO} x ${PP_RESIZE_TO}"`" ]] ; then
+            export PP_ICON_FOR_YAD="${PORT_PROTON_PATH}/data/img/${PORTPROTON_NAME}.png" 
         else
-            export PW_ICON_FOR_YAD="${PW_GUI_ICON_PATH}/port_proton.png"
+            export PP_ICON_FOR_YAD="${PP_GUI_ICON_PATH}/port_proton.png"
         fi
     fi
 }
 
-pw_find_exe () {
-    unset PW_FIND_TIME
+PP_find_exe () {
+    unset PP_FIND_TIME
     case "$1" in
-        "news") PW_FIND_TIME="-cmin -180" ;;
+        "news") PP_FIND_TIME="-cmin -180" ;;
     esac
 
-    PW_EXCLUDE_EXE_FIND='(windows|explorer|anticheat|programdata|redist|setup|.ppdb|unin|error|crash|handler|install|/jre/|steam|uploader|eac|netframe)'
-    PW_PATH_FOR_FIND="${PORT_WINE_PATH}/data/prefixes/"
+    PP_EXCLUDE_EXE_FIND='(windows|explorer|anticheat|programdata|redist|setup|.ppdb|unin|error|crash|handler|install|/jre/|steam|uploader|eac|netframe)'
+    PP_PATH_FOR_FIND="${PORT_PROTON_PATH}/data/prefixes/"
 
-    pw_start_progress_bar_block "Searching for .exe files... Please wait."
-    find -P "${PW_PATH_FOR_FIND}" -type f -name "*.exe" ${PW_FIND_TIME} | grep -viE ${PW_EXCLUDE_EXE_FIND} | \
-    awk -F"/prefixes/" '{print $2}' > "${PORT_WINE_TMP_PATH}/tmp_yad_find_exe"
-    pw_stop_progress_bar
+    PP_start_progress_bar_block "Searching for .exe files... Please wait."
+    find -P "${PP_PATH_FOR_FIND}" -type f -name "*.exe" ${PP_FIND_TIME} | grep -viE ${PP_EXCLUDE_EXE_FIND} | \
+    awk -F"/prefixes/" '{print $2}' > "${PORT_PROTON_TMP_PATH}/tmp_yad_find_exe"
+    PP_stop_progress_bar
 
     unset FIND_TO_GUI
     while read line; do
         FIND_TO_GUI+="${line}%"
-    done < "${PORT_WINE_TMP_PATH}/tmp_yad_find_exe"
+    done < "${PORT_PROTON_TMP_PATH}/tmp_yad_find_exe"
 
     OrigIFS="$IFS" && IFS=%
-    PW_SET_FIND_EXE="$(yad --height="300" --width="1000" --center --list \
-    --text-align=center --window-icon="$PW_GUI_ICON_PATH/port_proton.png" --title "Create shortcut for..." \
+    PP_SET_FIND_EXE="$(yad --height="300" --width="1000" --center --list \
+    --text-align=center --window-icon="$PP_GUI_ICON_PATH/port_proton.png" --title "Create shortcut for..." \
     --text="\n${loc_gui_create_shortcut_for_exe}" --column="path to .exe file:" ${FIND_TO_GUI})"
     YAD_STATUS="$?"
     print_var YAD_STATUS
     if [[ "$YAD_STATUS" == "1" || "$YAD_STATUS" == "252" ]] ; then
-        if [[ -z "${PW_SET_FIND_EXE}" ]] ; then
-            /usr/bin/env bash -c ${pw_full_command_line[*]} &
+        if [[ -z "${PP_SET_FIND_EXE}" ]] ; then
+            /usr/bin/env bash -c ${PP_full_command_line[*]} &
             echo "Restarting..."
         fi
         exit 0
     fi
     IFS=$OrigIFS
 
-    if [[ -n "${PW_SET_FIND_EXE}" ]] ; then
-        portwine_exe="${PW_PATH_FOR_FIND}$(echo "${PW_SET_FIND_EXE}" | awk -F'|' '{print $1}')"
+    if [[ -n "${PP_SET_FIND_EXE}" ]] ; then
+        portwine_exe="${PP_PATH_FOR_FIND}$(echo "${PP_SET_FIND_EXE}" | awk -F'|' '{print $1}')"
         portwine_create_shortcut silent
-        /usr/bin/env bash -c ${pw_full_command_line[*]} &
+        /usr/bin/env bash -c ${PP_full_command_line[*]} &
         exit 0
     fi
 }

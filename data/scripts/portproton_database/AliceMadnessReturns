@@ -1,0 +1,8 @@
+#!/usr/bin/env bash
+#Author: 
+#AliceMadnessReturns.exe 
+#Rating=5
+################################################
+export PP_VULKAN_USE=dxvk
+export LAUNCH_PARAMETERS=""
+export PP_DLL_INSTALL="physx"

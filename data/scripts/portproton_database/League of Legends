@@ -1,0 +1,32 @@
+#!/usr/bin/env bash
+#Author: xuser
+#LeagueClient.exe
+#RiotClientServices.exe
+#Install League of Legends ru.exe
+#Install League of Legends na.exe
+#Install League of Legends euw.exe
+#live.na.exe
+#Rating=1-5
+#####################examples###########################
+export TEXT_OPSSL=""
+[[ -z `which openssl` ]] && export TEXT_OPSSL="Install openssl in your system!!!\n"
+export PP_COMMENT_DB="${TEXT_OPSSL}Dwnload and start League of Legends can take a long time"
+export WINEDLLOVERRIDES="mscoree,mshtml="
+export LAUNCH_PARAMETERS="--launch-product=league_of_legends --launch-patchline=live"              # Additional launch options
+export PP_WINE_USE=WINE_LOL_GE_7.0-8
+export PP_VULKAN_USE=1
+export PP_MUST_HAVE_DLL=""
+export PP_PREFIX_NAME="LEAGUE_OF_LEGENDS"
+export PP_NO_FSYNC=1
+export PP_NO_ESYNC=1
+export PP_DISABLED_CREATE_DB=1
+export PP_USE_D3D_EXTRAS=1
+export DXVK_STABLE_VER="1.10.3-28"
+##export PP_GUI_DISABLED_CS=1                     # 1 = disabled GUI
+
+gui_proton_downloader silent "${PP_WINE_USE}"
+
+add_in_start_portwine () {
+    echo ""
+
+}

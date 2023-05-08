@@ -1,0 +1,8 @@
+#!/usr/bin/env bash
+#Author: Аливэй
+#Ableton Live 11 Suite.exe 
+#Rating=5
+################################################
+export PP_VULKAN_USE=dxvk
+export LAUNCH_PARAMETERS=""
+export PP_WINDOWS_VER=10 

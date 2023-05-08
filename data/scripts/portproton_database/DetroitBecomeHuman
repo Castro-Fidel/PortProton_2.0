@@ -1,0 +1,9 @@
+#!/usr/bin/env bash
+#Author: MrModer#6697
+#DetroitBecomeHuman.exe
+#Rating=1-5
+################################################
+export PP_VULKAN_USE=vkd3d
+export PP_FORCE_USE_VSYNC=0
+export PP_WINDOWS_VER="10"
+#export PP_VIRTUAL_DESKTOP=1

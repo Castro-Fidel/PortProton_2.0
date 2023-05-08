@@ -1,0 +1,7 @@
+#!/usr/bin/env bash
+#Author: Сергей 33 (46)
+#BF2.exe 
+#Rating=4
+################################################
+export PP_VULKAN_USE=vkd3d
+export PP_WINDOWS_VER="7"

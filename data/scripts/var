@@ -1,45 +1,45 @@
 #!/usr/bin/env bash
 #Author: Castro-Fidel (linux-gaming.ru)
-#SCRIPTS_NEXT_VERSION=0001
+#SCRIPTS_NEXT_VERSION=0002
 ########################################################################
-export PW_MANGOHUD=0
+export PP_URL="https://linux-gaming.ru/portproton/"
+export PP_MANGOHUD=0
 export MANGOHUD_CONFIG=cpu_stats,cpu_temp,cpu_mhz,cpu_color=2e97cb,cpu_text=CPU,gpu_stats,gpu_temp,gpu_core_clock,gpu_mem_clock,vulkan_driver,gpu_name,gpu_color=2e9762,gpu_text=GPU,vram,vram_color=ad64c1,ram,ram_color=c26693,io_color=a491d3,frame_timing=1,frametime_color=00ff00,time,arch,wine,wine_color=eb5b5b,engine_color=eb5b5b,background_alpha=0.2,font_size=24,background_color=020202,text_color=ffffff,toggle_hud=Shift_R+F12,resolution,gamemode,vkbasalt
 #export DXVK_HUD=compiler
 #export GALLIUM_HUD=fps
 #export ENABLE_VKBASALT=1
-#export PW_VIRTUAL_DESKTOP=1
-#export PW_XKBD_RU_HACK=1
-export PW_RT_MOUNT_RO=("")
-export PW_RT_MOUNT_RW=("/media" "/mnt" "/run/media/${USER}" "${PORT_WINE_PATH}")
-#export PW_SANDBOX_HOME_PATH="${PORT_WINE_PATH}"
-export PW_NO_ESYNC="1"
-export PW_USE_GAMEMODE="1"
-export PW_FORCE_USE_VSYNC="2"
-export PW_LOG="0"
-export PW_USE_TERMINAL="0"
-export PW_WINEDBG_DISABLE="1"
-export PW_WINDOWS_VER="10"
+#export PP_VIRTUAL_DESKTOP=1
+#export PP_XKBD_RU_HACK=1
+export PP_NO_ESYNC="1"
+export PP_USE_GAMEMODE="1"
+export PP_FORCE_USE_VSYNC="2"
+export PP_LOG="0"
+export PP_USE_TERMINAL="0"
+export PP_WINEDBG_DISABLE="1"
+export PP_WINDOWS_VER="10"
 export WINEARCH="win64"
-export PW_LIBS_VER="_v42"
+export PP_LIBS_VER="_v42"
 export GDK_BACKEND="x11"
-export PW_USE_GSTREAMER="1"
-export PW_USE_D3D_EXTRAS="1"
-export PW_PREFIX_NAME="DEFAULT"
+export PP_USE_GSTREAMER="1"
+export PP_USE_D3D_EXTRAS="1"
+export PP_PREFIX_NAME="DEFAULT"
 export WINE_WIN_START="start /i /b /wait /high /unix"
-export PW_USE_SHADER_CACHE="1"
+export PP_USE_SHADER_CACHE="1"
 export STAGING_SHARED_MEMORY="1"
-export PW_FORCE_LARGE_ADDRESS_AWARE="1"
+export PP_FORCE_LARGE_ADDRESS_AWARE="1"
+# export VKD3D_FEATURE_LEVEL=12_0
+export WINETRICKS_DOWNLOADER="curl"
 ###DEFAULT_WINE###
-export PW_WINE_USE="PROTON_LG"
-export PW_PLUGINS_VER="_v10"
-export PW_FAKE_DLSS_VER="091122"
+export PP_WINE_USE="PROTON_LG"
+export PP_PLUGINS_VER="_v10"
+export PP_FAKE_DLSS_VER="091122"
 ###WINE_PROTON_LG###
-export PW_LG_VER="7-54"
-export PW_PROTON_LG_VER="PROTON_LG_${PW_LG_VER}"
+export PP_LG_VER="7-54"
+export PP_PROTON_LG_VER="PROTON_LG_${PP_LG_VER}"
 ###WINE_PROTON_GE###
-export PW_GE_VER="7-54"
-export PW_PROTON_GE_VER="PROTON_GE_${PW_GE_VER}"
-export PW_WINE_FULLSCREEN_FSR="1"
+export PP_GE_VER="7-54"
+export PP_PROTON_GE_VER="PROTON_GE_${PP_GE_VER}"
+export PP_WINE_FULLSCREEN_FSR="1"
 ###DXVK_AND_VKD3D###
 export DXVK_STABLE_VER="1.10.3-28"
 export DXVK_GIT_VER="2.1-51"
@@ -49,14 +49,14 @@ export VKD3D_GIT_VER="1.1-3339"
 export DOTPFX_VER="48v1"
 export DEFPFX_VER="v1"
 #################################################################
-export DXVK_CONFIG_FILE="${PORT_WINE_PATH}/data/dxvk.conf"
+export DXVK_CONFIG_FILE="${PORT_PROTON_PATH}/data/dxvk.conf"
 #################################################################
-pw_install_dll_in_prefix ()
+PP_install_dll_in_prefix ()
 {
-    case $PW_PREFIX_NAME in
-        DEFAULT) export PW_MUST_HAVE_DLL="physx mfc42 vcrun2022" ;;
-         DOTNET) export PW_MUST_HAVE_DLL="physx mfc42 vcrun2022 faudio dotnet48" ;;
-              *) export PW_MUST_HAVE_DLL="" ;;
+    case $PP_PREFIX_NAME in
+        DEFAULT) export PP_MUST_HAVE_DLL="physx mfc42 vcrun2022" ;;
+         DOTNET) export PP_MUST_HAVE_DLL="physx mfc42 vcrun2022 faudio dotnet48" ;;
+              *) export PP_MUST_HAVE_DLL="" ;;
     esac
 }
 ########################################################################
@@ -70,9 +70,8 @@ add_in_stop_portwine ()
     echo " "
 }
 ########################################################################
-pw_other_fixes () 
+PP_other_fixes () 
 {
     echo ""
 }
 
-# export VKD3D_FEATURE_LEVEL=12_0

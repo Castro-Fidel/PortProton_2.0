@@ -1,0 +1,17 @@
+#!/usr/bin/env bash
+#Author: PortWINE
+#EpicGamesLauncher.exe
+#Rating=5
+##############################################
+#export PP_COMMENT_DB="PortWINE database file for Epic Games Launcher"
+# export PP_WINE_USE=PROTON_GE
+export PP_VULKAN_USE=1
+export LAUNCH_PARAMETERS="-SkipBuildPatchPrereq"
+export PP_DLL_INSTALL="vcrun2012 vcrun2013 vcrun2022"
+export PP_USE_D3D_EXTRAS=1
+export PP_WINE_USE="PROTON_LG"
+export WINEDLLOVERRIDES="vulkan-1=n,b"
+
+add_in_start_portwine () {
+    regdlloverrides "RDR2.exe:vulkan-1=n,b"
+}

@@ -1,0 +1,24 @@
+#!/usr/bin/env bash
+#Author: castro-fidel
+#VKPlayLoader.exe
+#Rating=5
+#####################examples###########################
+if [[ "${update_loc}" == "RUS" ]] ; then
+    export PP_COMMENT_DB="Если вы используете Wayland, для перехвата управления в Atomic Heart\nнеобходимо свернуть в трей сам VK Play Игровой центр"
+else
+    export PP_COMMENT_DB="If you use Wayland, to intercept control in Atomic Heart\n,you need to collapse the VK Play Game Center itself into the tray"
+fi
+export PP_WINDOWS_VER="10"
+export WINEDLLOVERRIDES=""
+export PP_MUST_HAVE_DLL=""
+export PP_PREFIX_NAME="VK_PLAY"
+export PP_USE_GSTREAMER="1"
+
+export PP_WINE_USE="WINE_8.5_LG"
+gui_proton_downloader silent "WINE_8.5_LG"
+
+add_in_start_portwine () {
+    if [[ -f "${PORT_PROTON_PATH}/data/prefixes/${PP_PREFIX_NAME}/user.reg" ]] ; then
+        sed -i '/Software\\\\Wine\\\\Explorer/d' "${PORT_PROTON_PATH}/data/prefixes/${PP_PREFIX_NAME}/user.reg"
+    fi
+}

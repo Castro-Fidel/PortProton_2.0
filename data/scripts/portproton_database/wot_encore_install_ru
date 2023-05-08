@@ -1,0 +1,13 @@
+#!/usr/bin/env bash
+#Author: user
+#wot_encore_install_ru.exe 
+#Rating=1-5
+################################################
+export PP_VULKAN_USE=dxvk
+export PP_USE_TERMINAL=1
+export PP_PREFIX_NAME="DOTNET"
+export PP_DLL_INSTALL="dotnet40 vcrun2017  mfc42 vb6run physx"
+export PP_COMMENT_DB="World Of Tanks EnCore Installer"
+export PP_USE_D3D_EXTRAS=0
+## export DXVK_HUD=fps,devinfo
+## export PP_MANGOHUD=1

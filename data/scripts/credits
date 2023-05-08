@@ -6,7 +6,7 @@ then
     KEY_CREDITS=$RANDOM
 
 yad --plug="${KEY_CREDITS}" --tabnum=1 --show-uri \
---image-path="$PW_GUI_ICON_PATH" --image="port_proton" \
+--image-path="$PP_GUI_ICON_PATH" --image="port_proton" \
 --text-align=center --scroll --text="PortProton v. ${install_ver}
 scripts v. ${scripts_install_ver}
 
@@ -335,12 +335,12 @@ Kron4ek/Wine: https://github.com/Kron4ek/Wine-Builds
 YAD: https://github.com/v1cont/yad
 ZENITY: https://github.com/GNOME/zenity" &
         
-yad --title "О НАС" --key="${KEY_CREDITS}" --window-icon="$PW_GUI_ICON_PATH/port_proton.png" \
+yad --title "О НАС" --key="${KEY_CREDITS}" --window-icon="$PP_GUI_ICON_PATH/port_proton.png" \
 --center --notebook --no-buttons  --tab-pos=bottom \
 --tab="О PORTPROTON" --tab="АВТОРЫ" --tab="ЛИЦЕНЗИЯ" --tab="СПОНСОРЫ" --tab="ПРИСОЕДИНИТЬСЯ" \
 --tab="БИБЛИОТЕКИ"
     echo "Exit from credits"
-    /usr/bin/env bash -c ${pw_full_command_line[*]} 
+    /usr/bin/env bash -c ${PP_full_command_line[*]} 
 
 else
 
@@ -348,7 +348,7 @@ else
 
 
 yad --plug="${KEY_CREDITS}" --tabnum=1 --show-uri \
---image-path="$PW_GUI_ICON_PATH" --image="port_proton" \
+--image-path="$PP_GUI_ICON_PATH" --image="port_proton" \
 --text-align=center --scroll --text="PortProton v. ${install_ver}
 scripts v. ${scripts_install_ver}
 
@@ -674,11 +674,11 @@ YAD: https://github.com/v1cont/yad
 ZENITY: https://github.com/GNOME/zenity" &
 
 
-yad --title "ABOUT US" --key="${KEY_CREDITS}" --window-icon="$PW_GUI_ICON_PATH/port_proton.png" \
+yad --title "ABOUT US" --key="${KEY_CREDITS}" --window-icon="$PP_GUI_ICON_PATH/port_proton.png" \
 --center --notebook --no-buttons  --tab-pos=bottom \
 --tab="ABOUT PORTPROTON" --tab="AUTORS" --tab="LICENSE" --tab="SPONSORS" --tab="JOIN" \
 --tab="THIRD PARTY LIBRARIES"
 
     echo "Exit from credits"
-    /usr/bin/env bash -c ${pw_full_command_line[*]} 
+    /usr/bin/env bash -c ${PP_full_command_line[*]} 
 fi

@@ -1,0 +1,8 @@
+#!/usr/bin/env bash
+#Author: 
+#MetroExodus.exe 
+#Rating=?
+################################################
+export PP_VULKAN_USE=vkd3d
+export LAUNCH_PARAMETERS=""
+export PP_GUI_DISABLED_CS=1                     # 1 = disabled GUI 

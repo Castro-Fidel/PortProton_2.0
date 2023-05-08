@@ -1,0 +1,29 @@
+#!/usr/bin/env bash
+#Author: PortWINE
+#wgc.exe
+#wgc_api.exe
+#lgc_api.exe
+#lgc.exe
+#Rating=5
+export PP_COMMENT_DB="Wargaming and Lesta Game Centers"
+################################################
+export PP_WINE_USE="PROTON_LG"
+export PP_VULKAN_USE=1                       #dxvk, vkd3d or 0 for OpenGL
+export LAUNCH_PARAMETERS=""            # Additional launch options
+#export PP_USE_TERMINAL=1
+export PP_WINDOWS_VER=10                        # Set windows version 10, 7 or XP
+#export PP_USE_NVAPI_AND_DLSS=0
+export WINEDLLOVERRIDES="ucrtbase,xaudio2_7,xaudio2_8=n,b"
+export PP_DLL_INSTALL="lucida vcrun2022"     # Install DDL in port prefix (used winetricks)
+##export PP_GUI_DISABLED_CS=1
+##export PP_WINEDBG_DISABLE=1                     # Disabled WINEDBG
+export PP_USE_D3D_EXTRAS=0
+
+add_in_start_portwine () {
+    if [[ -f "${PORT_PROTON_PATH}/data/prefixes/${PP_PREFIX_NAME}/drive_c/users/${USER}/AppData/Roaming/Wargaming.net/WorldOfTanks/preferences.xml" ]] ; then
+        sed -i 's%<igbHardwareAccelerationEnabled> true </igbHardwareAccelerationEnabled>%<igbHardwareAccelerationEnabled> false </igbHardwareAccelerationEnabled>%' "${PORT_PROTON_PATH}/data/prefixes/${PP_PREFIX_NAME}/drive_c/users/${USER}/AppData/Roaming/Wargaming.net/WorldOfTanks/preferences.xml"
+    fi
+    if [[ "${PP_VULKAN_USE}" == "0" || "${PP_VULKAN_USE}" == "3" ]] ; then
+        export LAUNCH_PARAMETERS="--disable-gpu"
+    fi
+}
