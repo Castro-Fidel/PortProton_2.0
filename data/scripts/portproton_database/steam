@@ -10,7 +10,7 @@ export WINEDLLOVERRIDES=""
 export LAUNCH_PARAMETERS="-gamepadui -fullscreen -no-dwrite"
 export PP_VULKAN_USE="1"
 
-add_in_start_portwine () {
+add_in_start_portproton () {
     echo "Disabled silent autostart steam."
     if [[ -f "${PORT_PROTON_PATH}/data/prefixes/${PP_PREFIX_NAME}/user.reg" ]] ; then
         sed -i '/steam.exe\\" -silent"/d' "${PORT_PROTON_PATH}/data/prefixes/${PP_PREFIX_NAME}/user.reg"

@@ -31,4 +31,4 @@
 ##export PP_VIRTUAL_DESKTOP=1
 ##export DXVK_HUD=fps,devinfo
 ##export PP_HEAP_DELAY_FREE=0
-##add_in_start_portwine () { commands ; }
+##add_in_start_portproton () { commands ; }

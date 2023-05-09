@@ -48,7 +48,7 @@ export PP_VKBASALT_FFX_CAS="0.5"
 #     chmod 444 "$EVE_SHADER_CASH/tq/launchdarkly_client.pyd"
 # }
 
-add_in_start_portwine () { 
+add_in_start_portproton () { 
     # eve_fix &
     echo ""
 }

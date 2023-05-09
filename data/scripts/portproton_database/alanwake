@@ -32,4 +32,4 @@ export PP_WINDOWS_VER=10                        # Set windows version 10, 7 or X
 ##export PP_DXGI_FROM_DXVK=0
 ##export WINEARCH=win32                           # defaut = win64
 ##export WINEPREFIX=
-##add_in_start_portwine () { commands ; }
+##add_in_start_portproton () { commands ; }

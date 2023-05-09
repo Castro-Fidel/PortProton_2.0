@@ -20,11 +20,23 @@ if [[ $(id -u) = 0 ]] ; then
     echo "Запускать всё подряд от root вредно для системы!"
     exit 1
 fi
+
+# проверка установлены ли все пакеты для работы скриптов
+for PROGS in "wget" "curl" "tar" "awk" "zenity" "cabextract" "pidof" "xrandr" ; do
+	if [ ! -x "$(which "${PROGS}" 2>/dev/null)" ] ; then
+		PROGS_INST="${PROGS_INST} ${PROGS}" && vexit=1
+	fi
+done
+if [ "${vexit}" -eq "1" ] ; then
+    echo "Установите недостающие пакеты: ${PROGS_INST}, и пререзапустите скрипт"
+    exit 1
+fi
+
 # переходим в каталог с PortProton
 cd "$(dirname "`readlink -f "$0"`")/../../" 
 # создаем переменную с путем до PortProton
 export PORT_PROTON_PATH="$(pwd)"
-# создаем переменную с путем до PortProton
+# создаем переменную с путем до data
 export PORT_PROTON_DATA_PATH="${PORT_PROTON_PATH}/data"
 # создаем переменную с путем до скриптов
 export PORT_PROTON_SCRIPTS_PATH="${PORT_PROTON_DATA_PATH}/scripts"
@@ -49,7 +61,6 @@ fi
 # создаем необходимые каталоги
 create_new_dir "${PORT_PROTON_DATA_PATH}/tmp"
 create_new_dir "${PORT_PROTON_DATA_PATH}/dist"
-create_new_dir "${PORT_PROTON_DATA_PATH}/prefixes"
 create_new_dir "${PORT_PROTON_DATA_PATH}/prefixes/DEFAULT"
 create_new_dir "${PORT_PROTON_DATA_PATH}/prefixes/DOTNET"
 
@@ -58,9 +69,8 @@ try_force_link_dir "${PORT_PROTON_PATH}/data/prefixes" "${PORT_PROTON_PATH}"
 
 # парсим каталоги где есть разные версии wine и записываем вывод в файлы wine_* в каталоге tmp
 parsing_dir "${PORT_PROTON_PATH}/data/dist" "${PORT_PROTON_DATA_PATH}/tmp/wine_portproton.tmp" 
-parsing_dir "/home/${USER}/.local/share/Steam/steamapps/common/" "${PORT_PROTON_DATA_PATH}/tmp/wine_steam.tmp" proton # !!! добавить в конец пути /file/
-sed -i '/Runtime/d' "${PORT_PROTON_DATA_PATH}/tmp/wine_steam.tmp" # удаляем лишнее из wine_steam.tmp
-parsing_dir "/home/${USER}/.local/share/lutris/runners/wine/" "${PORT_PROTON_DATA_PATH}/tmp/wine_lutris.tmp" x86_64
+parsing_dir "/home/${USER}/.local/share/Steam/steamapps/common/" "${PORT_PROTON_DATA_PATH}/tmp/wine_steam.tmp" proton
+parsing_dir "/home/${USER}/.local/share/lutris/runners/wine/" "${PORT_PROTON_DATA_PATH}/tmp/wine_lutris.tmp"
 parsing_dir "/home/${USER}/.PlayOnLinux/wine/linux-amd64/" "${PORT_PROTON_DATA_PATH}/tmp/wine_playonlinux.tmp"
 
 echo "
@@ -77,7 +87,7 @@ for pfx_dir in $(ls -1 "${PORT_PROTON_PATH}/data/prefixes/") ; do
         mv -- "${PORT_PROTON_PATH}/data/prefixes/$pfx_dir" "${PORT_PROTON_PATH}/data/prefixes/${pfx_dir_new^^}"
     fi
     if [[ -d "${PORT_PROTON_DATA_PATH}/prefixes/${pfx_dir_new^^}" ]] ; then
-        echo "${pfx_dir_new^^}=\"${PORT_PROTON_DATA_PATH}/prefixes/${pfx_dir_new^^}\"" >> "${PORT_PROTON_DATA_PATH}/tmp/prefixes.tmp"
+        echo "${pfx_dir_new^^}" >> "${PORT_PROTON_DATA_PATH}/tmp/prefixes.tmp"
     fi
 done
 IFS="$orig_IFS"
@@ -86,11 +96,150 @@ echo "
 cat "${PORT_PROTON_DATA_PATH}/tmp/prefixes.tmp"
 
 # парсим каталог portproton_autoinstall и записываем вывод в файл portproton_autoinstall.tmp в каталоге tmp
-parsing_dir "${PORT_PROTON_SCRIPTS_PATH}/portproton_autoinstall" "${PORT_PROTON_DATA_PATH}/tmp/portproton_autoinstall.tmp"
-sed -i '/.png/d' "${PORT_PROTON_DATA_PATH}/tmp/portproton_autoinstall.tmp" # удаляем иконки из списка в файле portproton_autoinstall.tmp
+parsing_dir "${PORT_PROTON_SCRIPTS_PATH}/portproton_autoinstall" "${PORT_PROTON_DATA_PATH}/tmp/portproton_autoinstall.tmp" portproton_autoinstall
 echo "
 Выводим список всех скриптов автоматических установок игр/приложений:"
 cat "${PORT_PROTON_DATA_PATH}/tmp/portproton_autoinstall.tmp"
 
-echo "
-END"
+# по умолчанию значение PP_PREFIX_NAME присваевается в скрипте var
+
+start_portproton () {
+    if [[ ! -z "${PP_LOG}" && "${PP_LOG}" != 0 ]] ; then
+        export WINEDEBUG="fixme-all,err+loaddll,err+dll,err+file,err+reg"
+        export DXVK_LOG_LEVEL="warn"
+        export VKD3D_DEBUG="warn"
+        export WINE_MONO_TRACE="E:System.NotImplementedException"
+        export VK_LOADER_DEBUG="warn"
+        export VKBASALT_LOG_LEVEL="warn"
+    else
+        export WINEDEBUG="-all"
+        export DXVK_LOG_LEVEL="none"
+        export VKD3D_SHADER_DEBUG="none"
+        export VKD3D_DEBUG="none"
+        export DXVK_LOG_PATH="none"
+        export VKBASALT_LOG_LEVEL="none"
+    fi
+    if [[ ! -z "${PP_NO_ESYNC}" && "${PP_NO_ESYNC}" != 0 ]] ; then
+        export WINEESYNC="0"
+    else 
+        export WINEESYNC="1"
+    fi
+    if [[ ! -z "${PP_NO_FSYNC}" && "${PP_NO_FSYNC}" != 0 ]] ; then
+        export WINEFSYNC="0"
+        export WINEFSYNC_FUTEX2="0"
+    else
+        export WINEFSYNC="1"
+        export WINEFSYNC_FUTEX2="1"
+        export WINEFSYNC_SPINCOUNT=100
+    fi
+    if [[ ! -z "${PP_FORCE_LARGE_ADDRESS_AWARE}" && "${PP_FORCE_LARGE_ADDRESS_AWARE}" != 0 ]]
+    then export WINE_LARGE_ADDRESS_AWARE="1"
+    else export WINE_LARGE_ADDRESS_AWARE="0"
+    fi
+    if [[ ! -z "${PP_OLD_GL_STRING}" && "${PP_OLD_GL_STRING}" != 0 ]] ; then
+        export MESA_EXTENSION_MAX_YEAR="2003" #mesa override
+        export __GL_ExtensionStringVersion="17700" #nvidia override
+    fi
+    if [[ ! -z "${PP_NO_WRITE_WATCH}" && "${PP_NO_WRITE_WATCH}" != 0 ]] ; then
+        export WINE_DISABLE_WRITE_WATCH="1"
+    fi
+    if [[ ! -z "${PP_VULKAN_NO_ASYNC}" && "${PP_VULKAN_NO_ASYNC}" != 0 ]] ; then
+        export RADV_DEBUG="llvm"
+        var_vkd3d_config_update single_queue
+    fi
+
+    enabled_fake_nvidia_videocard () 
+    {
+        if [[ "${1}" == 1 ]] ; then
+            sed -i /'dxgi.customDeviceId =/c dxgi.customDeviceId = 222F' "${DXVK_CONFIG_FILE}"
+            sed -i /'dxgi.customVendorId =/c dxgi.customVendorId = 10de' "${DXVK_CONFIG_FILE}"
+        elif [[ "${1}" == 0 ]] ; then
+            sed -i /'dxgi.customDeviceId =/c # dxgi.customDeviceId = 222F' "${DXVK_CONFIG_FILE}"
+            sed -i /'dxgi.customVendorId =/c # dxgi.customVendorId = 10de' "${DXVK_CONFIG_FILE}"
+        fi
+    }
+
+    if [[ ! -z "${PP_USE_FAKE_DLSS}" && "${PP_USE_FAKE_DLSS}" == 1 && -d "${PP_PLUGINS_PATH}/fake_dlss/${PP_FAKE_DLSS_VER}/" ]]
+    then
+        try_force_link_file "${PP_PLUGINS_PATH}/fake_dlss/${PP_FAKE_DLSS_VER}/nvngx.dll" "${PORT_WINE_PATH}/data/prefixes/${PP_PREFIX_NAME}/drive_c/windows/system32/" 
+        try_force_link_file "${PP_PLUGINS_PATH}/fake_dlss/${PP_FAKE_DLSS_VER}/nvngx.ini" "${PORT_WINE_PATH}/data/prefixes/${PP_PREFIX_NAME}/drive_c/windows/system32/"
+        enabled_fake_nvidia_videocard 1
+        export DXVK_NVAPIHACK=0
+        export DXVK_ENABLE_NVAPI=1
+        export WINE_HIDE_NVIDIA_GPU=0
+    elif [[ ! -z "${PP_USE_NVAPI_AND_DLSS}" && "${PP_USE_NVAPI_AND_DLSS}" == 1 ]] && [[ -d "${WINEDIR}/lib/wine/nvapi/" ]]
+    then
+        if ! try_force_link_file "${WINEDIR}/lib/wine/nvapi/nvapi.dll" "${PORT_WINE_PATH}/data/prefixes/${PP_PREFIX_NAME}/drive_c/windows/syswow64/" ; then
+            try_force_link_file "${PP_PLUGINS_PATH}/nvapi/x32/nvapi.dll" "${PORT_WINE_PATH}/data/prefixes/${PP_PREFIX_NAME}/drive_c/windows/syswow64/"
+        fi
+        if ! try_force_link_file "${WINEDIR}/lib64/wine/nvapi/nvapi64.dll" "${PORT_WINE_PATH}/data/prefixes/${PP_PREFIX_NAME}/drive_c/windows/system32/" ; then
+            try_force_link_file "${PP_PLUGINS_PATH}/nvapi/x64/nvapi64.dll" "${PORT_WINE_PATH}/data/prefixes/${PP_PREFIX_NAME}/drive_c/windows/system32/" 
+        fi
+        try_remove_file "${PORT_WINE_PATH}/data/prefixes/${PP_PREFIX_NAME}/drive_c/windows/system32/nvngx.ini"
+        var_winedlloverride_update "nvapi,nvapi64=n;nvml,nvcuda,nvcuvid=b"
+        if [[ ! -f "${PORT_WINE_PATH}/data/prefixes/${PP_PREFIX_NAME}/drive_c/windows/system32/nvngx.dll" || ! -f "${PORT_WINE_PATH}/data/prefixes/${PP_PREFIX_NAME}/drive_c/windows/system32/_nvngx.dll" ]] ; then
+            try_copy_file `find /usr/* -type f -name "nvngx.dll" 2>/dev/null | awk '{print $1}' | grep '/lib/'` "${PORT_WINE_PATH}/data/prefixes/${PP_PREFIX_NAME}/drive_c/windows/system32/"
+            try_copy_file `find /usr/* -type f -name "_nvngx.dll" 2>/dev/null | awk '{print $1}' | grep '/lib/'` "${PORT_WINE_PATH}/data/prefixes/${PP_PREFIX_NAME}/drive_c/windows/system32/"       
+        fi
+        # echo "Try link nvml.dll.so to prefix"
+        try_force_link_file "${PP_PLUGINS_PATH}"/nvml/lib/wine/nvml.dll.so "${PORT_WINE_PATH}/data/prefixes/${PP_PREFIX_NAME}/drive_c/windows/syswow64/nvml.dll"
+        try_force_link_file "${PP_PLUGINS_PATH}"/nvml/lib64/wine/nvml.dll.so "${PORT_WINE_PATH}/data/prefixes/${PP_PREFIX_NAME}/drive_c/windows/system32/nvml.dll"
+        export DXVK_NVAPIHACK=0
+        export DXVK_ENABLE_NVAPI=1
+        export WINE_HIDE_NVIDIA_GPU=0
+        enabled_fake_nvidia_videocard 0
+    else
+        enabled_fake_nvidia_videocard 0
+        export DXVK_NVAPIHACK=1
+        export DXVK_ENABLE_NVAPI=0
+        export WINE_HIDE_NVIDIA_GPU=1
+    fi
+
+    if [[ ! -z "${PP_PRIME_RENDER_OFFLOAD}" && "${PP_PRIME_RENDER_OFFLOAD}" != 0 ]] ; then
+        export __NV_PRIME_RENDER_OFFLOAD=1
+    fi
+    
+    if [[ ! -z "${PP_HEAP_DELAY_FREE}" && "${PP_HEAP_DELAY_FREE}" != 0 ]]
+    then export WINE_HEAP_DELAY_FREE="1"
+    else export WINE_HEAP_DELAY_FREE="0"
+    fi
+
+    if [[ ! -z "${PP_WINE_ALLOW_XIM}" && "${PP_WINE_ALLOW_XIM}" != 0 ]]
+    then export WINE_ALLOW_XIM="1"
+    else export WINE_ALLOW_XIM="0"
+    fi
+
+    if [[ ! -z "${PP_FIX_VIDEO_IN_GAME}" && "${PP_FIX_VIDEO_IN_GAME}" != 0 ]]
+    then export WINE_DO_NOT_CREATE_DXGI_DEVICE_MANAGER="1"
+    else export WINE_DO_NOT_CREATE_DXGI_DEVICE_MANAGER="0"
+    fi
+    
+    if [[ ! -z "${PP_USE_DXR11}" && "${PP_USE_DXR11}" != 0 ]] ; then 
+        var_vkd3d_config_update dxr11
+        var_radv_perftest_config_update rt,gpl
+        export VKD3D_FEATURE_LEVEL=12_1
+    elif [[ ! -z "${PP_USE_DXR10}" && "${PP_USE_DXR10}" != 0 ]] ; then 
+        var_vkd3d_config_update dxr
+        var_radv_perftest_config_update rt,gpl
+        export VKD3D_FEATURE_LEVEL=12_1
+    fi
+
+    if [[ "${PP_USE_EAC_AND_BE}" == 1 ]] ; then
+        export PROTON_BATTLEYE_RUNTIME="${PP_PLUGINS_PATH}/BattlEye_Runtime"
+        export PROTON_EAC_RUNTIME="${PP_PLUGINS_PATH}/EasyAntiCheat_Runtime"
+        var_winedlloverride_update "beclient,beclient_x64=b,n"
+    else
+        unset PROTON_BATTLEYE_RUNTIME PROTON_EAC_RUNTIME
+    fi
+
+    if [ "${PP_USE_GSTREAMER}" = 1 ] ; then 
+        export WINE_GST_REGISTRY_DIR="${PORT_WINE_TMP_PATH}"
+        export MEDIACONV_AUDIO_DUMP_FILE="${PORT_WINE_TMP_PATH}"/audio.foz
+        export MEDIACONV_AUDIO_TRANSCODED_FILE="${PORT_WINE_TMP_PATH}"/transcoded_audio.foz
+        export MEDIACONV_VIDEO_DUMP_FILE="${PORT_WINE_TMP_PATH}"/video.foz
+        export MEDIACONV_VIDEO_TRANSCODED_FILE="${PORT_WINE_TMP_PATH}"/transcoded_video.foz
+    else
+        var_winedlloverride_update "winegstreamer="
+    fi
+}
+

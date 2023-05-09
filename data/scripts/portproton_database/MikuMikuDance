@@ -29,7 +29,7 @@ export PP_WINE_ALLOW_XIM=0
 export PP_WINEDBG_DISABLE=1
 export PP_USE_TERMINAL=0
 export PP_GUI_DISABLED_CS=0
-##add_in_start_portwine () { commands ; }
+##add_in_start_portproton () { commands ; }
 ##export PP_WINE_USE=WINE_7.0_STAGING_AMD64!!!!
 export PP_MANGOHUD=0
 export PP_MANGOHUD_USER_CONF=0

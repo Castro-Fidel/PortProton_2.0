@@ -33,4 +33,4 @@ export PP_DLL_INSTALL="d3dcompiler_43 d3dcompiler_47 d3dx9 d3dx11_42 d3dx11_43"
 ##export DXVK_HUD=fps,devinfo
 ##export PP_HEAP_DELAY_FREE=0
 ##export PP_DXGI_FROM_DXVK=0
-##add_in_start_portwine () { commands ; }
+##add_in_start_portproton () { commands ; }

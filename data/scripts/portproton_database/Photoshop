@@ -33,4 +33,4 @@ export PP_DLL_INSTALL="atmlib corefonts gdiplus msxml3 msxml6 vcrun2012 vcrun201
 ##export PP_WINEDBG_DISABLE=1                     # Disabled WINEDBG
 ##export PP_USE_TERMINAL=1                        # Force run in terminal
 ##export PP_GUI_DISABLED_CS=1                     # 1 = disabled GUI 
-#ADD_IN_START_PORTWINE () { commands ; }
+#ADD_IN_start_portproton () { commands ; }

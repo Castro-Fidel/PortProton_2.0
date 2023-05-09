@@ -8,6 +8,6 @@
 export PP_VULKAN_USE=1
 export PP_DLL_INSTALL="vcrun2019"
 export PP_WINDOWS_VER=10
-add_in_start_portwine () {
+add_in_start_portproton () {
     regdlloverrides "RDR2.exe:vulkan-1=n"
 }

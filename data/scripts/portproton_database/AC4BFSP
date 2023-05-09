@@ -35,7 +35,7 @@ export PP_WINEDBG_DISABLE=1
 export PP_USE_TERMINAL=0
 export PP_GUI_DISABLED_CS=0
 ##export PATH_TO_GAME=
-##add_in_start_portwine () { commands ; }
+##add_in_start_portproton () { commands ; }
 export PP_MANGOHUD=1
 export PP_MANGOHUD_USER_CONF=0
 export PP_USE_DXR11=0

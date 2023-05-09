@@ -17,6 +17,6 @@ export PP_USE_D3D_EXTRAS=1
 #export PP_GUI_DISABLED_CS=1                     # 1 = disabled GUI
 export PP_WINDOWS_VER=7
 
-add_in_start_portwine () {
+add_in_start_portproton () {
     echo ""
 }

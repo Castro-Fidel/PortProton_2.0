@@ -1,0 +1,18 @@
+#!/usr/bin/env bash
+# Author: chal55rus (Sergey P.)
+########################################################################
+export PP_AUTOINSTALL_EXE="${PP_USER_TEMP}/RetroArch.7z"
+start_portproton
+if try_download "buildbot.libretro.com/stable/1.9.13/windows/x86_64/RetroArch.7z" "${PP_AUTOINSTALL_EXE}"
+then
+    PP_start_progress_bar_block "${loc_gui_installing_the} RetroArch. ${loc_gui_please_wait} "
+    "$PP_7z" x -y "${PP_AUTOINSTALL_EXE}" -o"$WINEPREFIX/drive_c/Program Files (x86)"
+    portproton_exe="$WINEPREFIX/drive_c/Program Files (x86)/RetroArch-Win64/retroarch.exe"
+    try_remove_file "${PP_AUTOINSTALL_EXE}"
+    try_remove_file "${portproton_exe}.ppdb"
+    kill_portwine
+    PP_stop_progress_bar
+    export PORTWINE_CREATE_SHORTCUT_NAME="RetroArch"
+    portwine_create_shortcut
+fi
+stop_portwine

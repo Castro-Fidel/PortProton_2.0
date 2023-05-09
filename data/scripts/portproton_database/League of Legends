@@ -26,7 +26,7 @@ export DXVK_STABLE_VER="1.10.3-28"
 
 gui_proton_downloader silent "${PP_WINE_USE}"
 
-add_in_start_portwine () {
+add_in_start_portproton () {
     echo ""
 
 }

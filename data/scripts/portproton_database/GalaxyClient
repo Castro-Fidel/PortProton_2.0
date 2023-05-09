@@ -9,7 +9,7 @@ export PP_WINE_USE=PROTON_GE
 export WINEDLLOVERRIDES="galaxycommunication.exe=n;libglesv2="
 export LAUNCH_PARAMETERS="/runWithoutUpdating /deelevated"
 export PP_DLL_INSTALL="vcrun2019"
-add_in_start_portwine ()
+add_in_start_portproton ()
 {
 if [ -e "${WINEPREFIX}/drive_c/users/${USER}/Local Settings/Application Data/GOG.com/Galaxy/Configuration/config.json" ] ; then
     sed -i 's/"featureOverlay" : true,/"featureOverlay" : false,/' "${WINEPREFIX}/drive_c/${USER}/steamuser/Local Settings/Application Data/GOG.com/Galaxy/Configuration/config.json"

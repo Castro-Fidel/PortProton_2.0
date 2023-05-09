@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 #Author: Castro-Fidel (linux-gaming.ru)
-#SCRIPTS_NEXT_VERSION=0002
+#SCRIPTS_NEXT_VERSION=0003
 ########################################################################
 export PP_URL="https://linux-gaming.ru/portproton/"
 export PP_MANGOHUD=0
@@ -30,15 +30,9 @@ export PP_FORCE_LARGE_ADDRESS_AWARE="1"
 # export VKD3D_FEATURE_LEVEL=12_0
 export WINETRICKS_DOWNLOADER="curl"
 ###DEFAULT_WINE###
-export PP_WINE_USE="PROTON_LG"
+export PP_WINE_DEFAULT_USE="PROTON_LG_7-54"
 export PP_PLUGINS_VER="_v10"
 export PP_FAKE_DLSS_VER="091122"
-###WINE_PROTON_LG###
-export PP_LG_VER="7-54"
-export PP_PROTON_LG_VER="PROTON_LG_${PP_LG_VER}"
-###WINE_PROTON_GE###
-export PP_GE_VER="7-54"
-export PP_PROTON_GE_VER="PROTON_GE_${PP_GE_VER}"
 export PP_WINE_FULLSCREEN_FSR="1"
 ###DXVK_AND_VKD3D###
 export DXVK_STABLE_VER="1.10.3-28"
@@ -51,6 +45,8 @@ export DEFPFX_VER="v1"
 #################################################################
 export DXVK_CONFIG_FILE="${PORT_PROTON_PATH}/data/dxvk.conf"
 #################################################################
+export WINE_MONO_OVERRIDES="Microsoft.Xna.Framework.*,Gac=n"
+
 PP_install_dll_in_prefix ()
 {
     case $PP_PREFIX_NAME in
@@ -60,7 +56,7 @@ PP_install_dll_in_prefix ()
     esac
 }
 ########################################################################
-add_in_start_portwine ()
+add_in_start_portproton ()
 {
     echo " "
 }

@@ -1,0 +1,21 @@
+#!/usr/bin/env bash
+# Author: Castro Fidel
+########################################################################
+export LAUNCH_PARAMETERS=("/q")
+export PP_AUTOINSTALL_EXE="${PP_USER_TEMP}/Warframe.msi"
+
+start_portproton
+if try_download "http://content.warframe.com/dl/Warframe.msi" "${PP_AUTOINSTALL_EXE}"
+then
+    PP_start_progress_bar_block "${loc_gui_installing_the} Warframe. ${loc_gui_please_wait} "
+    PP_kill_autostart Launcher.exe 3 &
+    pp_run msiexec /i "${PP_AUTOINSTALL_EXE}"
+    portproton_exe="${WINEPREFIX}/drive_c/users/$USER/AppData/Local/Warframe/Downloaded/Public/Tools/Launcher.exe"
+    try_remove_file "${PP_AUTOINSTALL_EXE}"
+    try_remove_file "${portproton_exe}.ppdb"
+    kill_portwine
+    PP_stop_progress_bar
+    export PORTWINE_CREATE_SHORTCUT_NAME="Warframe"
+    portwine_create_shortcut
+fi
+stop_portwine

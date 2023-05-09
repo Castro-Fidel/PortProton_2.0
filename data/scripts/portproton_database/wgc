@@ -19,7 +19,7 @@ export PP_DLL_INSTALL="lucida vcrun2022"     # Install DDL in port prefix (used 
 ##export PP_WINEDBG_DISABLE=1                     # Disabled WINEDBG
 export PP_USE_D3D_EXTRAS=0
 
-add_in_start_portwine () {
+add_in_start_portproton () {
     if [[ -f "${PORT_PROTON_PATH}/data/prefixes/${PP_PREFIX_NAME}/drive_c/users/${USER}/AppData/Roaming/Wargaming.net/WorldOfTanks/preferences.xml" ]] ; then
         sed -i 's%<igbHardwareAccelerationEnabled> true </igbHardwareAccelerationEnabled>%<igbHardwareAccelerationEnabled> false </igbHardwareAccelerationEnabled>%' "${PORT_PROTON_PATH}/data/prefixes/${PP_PREFIX_NAME}/drive_c/users/${USER}/AppData/Roaming/Wargaming.net/WorldOfTanks/preferences.xml"
     fi

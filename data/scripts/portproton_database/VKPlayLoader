@@ -17,7 +17,7 @@ export PP_USE_GSTREAMER="1"
 export PP_WINE_USE="WINE_8.5_LG"
 gui_proton_downloader silent "WINE_8.5_LG"
 
-add_in_start_portwine () {
+add_in_start_portproton () {
     if [[ -f "${PORT_PROTON_PATH}/data/prefixes/${PP_PREFIX_NAME}/user.reg" ]] ; then
         sed -i '/Software\\\\Wine\\\\Explorer/d' "${PORT_PROTON_PATH}/data/prefixes/${PP_PREFIX_NAME}/user.reg"
     fi

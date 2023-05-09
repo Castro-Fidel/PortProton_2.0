@@ -29,5 +29,5 @@ export PP_WINDOWS_VER=10                      # Set windows version 10, 7 or XP
 ##export DXVK_HUD=fps,devinfo
 ##export PP_HEAP_DELAY_FREE=0
 ##export PP_DXGI_FROM_DXVK=0
-##add_in_start_portwine () { commands ; }
+##add_in_start_portproton () { commands ; }
 export PP_VULKAN_USE=0

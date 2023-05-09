@@ -1,18 +1,19 @@
 #!/usr/bin/env bash
 # Author: Castro-Fidel (linux-gaming.ru)
 ########################################################################
+# функция вывода ошибки
 print_error () {
     echo "ERROR: $@"
 }
-
+# функция вывода информации
 print_info () {
     echo "INFO: $@"
 }
-
+# функция вывода переменных
 print_var () {
     for vp in $@ ; do echo "${vp}=${!vp}" ; done
 }
-
+# функция копирования файла 
 try_copy_file () {
     if [ ! -f "$1" ] ; then	print_info "file $1 not found for copy" && return 1
     elif [ -z "$2" ] ; then	print_error "no way to copy file $1" && return 1
@@ -24,7 +25,7 @@ try_copy_file () {
         fi
     fi
 }
-
+# функция копирования каталога
 try_copy_dir () {
     if [ ! -d "$1" ] ; then	print_info "directory $1 not found for copy"
     elif [ -z "$2" ] ; then	print_error "no way to copy directory $1"
@@ -34,21 +35,21 @@ try_copy_dir () {
     fi
     return 1
 }
-
+# функция удаления файла 
 try_remove_file () {
     if [ -f "$1" ] ; then
         rm -f "$1"
         [ "$?" == 0 ] && return 0 || return 1
     fi
 }
-
+# функция удаления директории
 try_remove_dir () {
     if [ -d "$1" ] ; then
         rm -fr "$1"
         [ "$?" == 0 ] && return 0 || return 1
     fi
 }
-
+# функция создания символьной ссылки на файл
 try_force_link_file () {
     if [ ! -f "$1" ] ; then :
     elif [ -z "$2" ] ; then	print_error "no way to link file $1"
@@ -58,7 +59,7 @@ try_force_link_file () {
     fi
     return 1
 }
-
+# функция проверки символьной ссылки
 check_symlink () {
     CHK_SYMLINK_FILE="`file "$1"`"
     if [[ ! -z "`echo "$CHK_SYMLINK_FILE" | grep -v "broken" | grep "symbolic link to" | awk '{print $1}'`" ]] ; then
@@ -71,7 +72,7 @@ check_symlink () {
         return 1
     fi
 }
-
+# функция создания символьной ссылки на каталог
 try_force_link_dir () {
     if [ ! -d "$1" ] ; then	print_info "directory $1 not found for link"
     elif [ -z "$2" ] ; then	print_error "no way to link directory $1"
@@ -81,8 +82,7 @@ try_force_link_dir () {
     fi
     return 1
 }
-
-# функция проверки каталога (первый аргумен) с выводом в файл (второй аргумент), третий аргумент является фильтром
+# функция проверки каталога (первый аргумен) с выводом в файл (второй аргумент), третий аргумент является условием для case (выборки)
 parsing_dir () {
     if [[ -d "$1" ]] ; then
         orig_IFS="$IFS"
@@ -91,11 +91,14 @@ parsing_dir () {
         for par_dir in $(ls -1 "$1") ; do
             if [[ -n "${par_dir}" ]] ; then
                 par_dir_new=`echo "${par_dir}" | awk '$1=$1' | sed -e s/[[:blank:]]/_/g`
-                if [[ -n "$3" ]] ; then
-                    echo "${par_dir_new^^}=\"$(dirname "`readlink -f "$1/$par_dir"`")/$par_dir\"" | grep -i "$3" >> "$2"
-                else
-                    echo "${par_dir_new^^}=\"$(dirname "`readlink -f "$1/$par_dir"`")/$par_dir\"" >> "$2"
-                fi
+                case "$3" in
+                proton)
+                    echo "${par_dir_new^^}=\"$(dirname "`readlink -f "$1/$par_dir"`")/$par_dir/file\"" | grep -i "proton" | grep -v "Runtime" >> "$2" ;;
+                portproton_autoinstall)
+                    echo "${par_dir}" | grep -v ".png" >> "$2" ;;
+                *)
+                    echo "${par_dir_new^^}=\"$(dirname "`readlink -f "$1/$par_dir"`")/$par_dir\"" >> "$2" ;;
+                esac
             else
                 return 1
             fi
@@ -106,11 +109,11 @@ parsing_dir () {
     fi
     return 0
 }
-
+# функция проверки запущен ли процесс (первый аргумен)
 check_process () {
     [ ! -n "`ps cax | grep "$1" | awk '{print $1}'`" ] && return 0 || return 1 
 }
-
+# функция в скачивания с индикацией прогресса с помощью zenity ($1 - ссылка, $2 - в какой файл) 
 try_download () {
     PP_DOWNLOAD_FILE_NAME="$(basename $1)"
     set -o pipefail
@@ -135,7 +138,7 @@ try_download () {
     try_remove_file "${PORT_PROTON_TMP_PATH}/download_log"
     return 0
 }
-
+# функция в скачивания с индикацией прогресса с помощью zenity ($1 - ссылка, $2 - в какой каталог) 
 try_download_to_path () {
     set -o pipefail
     wget --directory-prefix="$2" --read-timeout 300 --retry-connrefused --timeout 15 --tries 3 \
@@ -149,7 +152,7 @@ try_download_to_path () {
         return 0
     fi
 }
-
+# функция в скачивания без индикации ($1 - ссылка, $2 - в какой файл) 
 try_download_silent () {
     wget -O "$2" --read-timeout 300 --retry-connrefused --timeout 15 --tries 3 \
     --user-agent="Mozilla/5.0 (compatible; Konqueror/2.1.1; X11)" "$1"
@@ -267,7 +270,7 @@ PP_clear_pfx () {
     return 0
 }
 
-PP_reinstall_pp () {
+pp_reinstall_pp () {
     if [[ "${PP_REINSTALL_FROM_TERMINAL}" == 1 ]] ; then
         read -p "Do you want to reinstall PortProton? (Y,y - Yes):   " -n 1 -r
         if [[ ! $REPLY =~ ^[Yy]$ ]]
@@ -286,86 +289,51 @@ PP_reinstall_pp () {
     echo 1000 > "${PORT_PROTON_TMP_PATH}/scripts_ver"
     echo
     echo "Restarting PP for reinstall files..."
-    /usr/bin/env bash -c ${PP_full_command_line[*]} &
+    /usr/bin/env bash -c ${pp_full_command_line[*]} &
     exit 0
 }
 
 init_wine_ver () {
-    if [[ -d "${PORT_PROTON_PATH}/data/dist" ]] ; then
-        orig_IFS="$IFS"
-        IFS=$'\n'
-        for dist_dir in $(ls -1 "${PORT_PROTON_PATH}/data/dist/") ; do
-            dist_dir_new=`echo "${dist_dir}" | awk '$1=$1' | sed -e s/[[:blank:]]/_/g`
-            if [[ ! -d "${PORT_PROTON_PATH}/data/dist/${dist_dir_new^^}" ]] ; then
-                mv -- "${PORT_PROTON_PATH}/data/dist/$dist_dir" "${PORT_PROTON_PATH}/data/dist/${dist_dir_new^^}"
-            fi
-        done
-        IFS="$orig_IFS"
+    if [[ ! `grep -i "${PP_WINE_USE}" "${PORT_PROTON_DATA_PATH}/tmp/wine_"*` ]] ; then
+        export PP_WINE_USE="${PP_WINE_DEFAULT_USE}"
     fi
-    if [[ -z `ls "${PORT_PROTON_PATH}/data/dist/" | grep "${PP_WINE_USE}"` ]] ; then
-        if [[ ! -z `echo "${PP_WINE_USE}" | grep "PROTON_LG"` ]] ; then
-            export PP_WINE_USE=PROTON_LG
-        else
-            export PP_WINE_USE=PROTON_GE
-        fi
-    fi
-    if [[ ! -z `echo "${PP_WINE_USE}" | grep "^PROTON_LG$"` ]] 
-    then export PP_WINE_USE="${PP_PROTON_LG_VER}"
-    elif [[ ! -z `echo "${PP_WINE_USE}" | grep "^PROTON_GE$"` ]]
-    then export PP_WINE_USE="${PP_PROTON_GE_VER}"
-    fi
-    [ ! -z "${PP_WINE_VER}" ] && export PP_WINE_USE=`echo "${PP_WINE_VER}" | tr [[:lower:]] [[:upper:]]`
-    [ ! -z "${PP_WINE_USE}" ] && export PP_WINE_USE=`echo "${PP_WINE_USE}" | tr [[:lower:]] [[:upper:]]`
-    unset PP_WINE_VER
-    export WINEDIR="${PORT_PROTON_PATH}/data/dist/${PP_WINE_USE}"
+
+    export WINEDIR="${PORT_PROTON_DATA_PATH}/dist/${PP_WINE_USE}"
     export WINE="${WINEDIR}/bin/wine"
     export WINELOADER="${WINEDIR}/bin/wine"
     export WINESERVER="${WINEDIR}/bin/wineserver"
-
-    export WINEDLLPATH="${WINEDIR}/lib64/wine:${WINEDIR}/lib/wine"
-    if [[ ! -z "${PATH_TO_GAME}" ]] ; then
-        export WINEDLLPATH+=":${PATH_TO_GAME}"
-    fi
 
     if [ ! -z "${PATH}" ]
     then export PATH="${WINEDIR}/bin:${PATH}"
     else export PATH="${WINEDIR}/bin"
     fi
-
-    if [[ -d "${WINEDIR}/files" && ! -d "${WINEDIR}/dist" ]] ; then
-        for clear_dist_files in `ls "${WINEDIR}" | sed -e "s/^files$//g" | sed -e "s/^version$//g"` ; do 
-            rm -fr "${WINEDIR}/$clear_dist_files"
-        done
-        mv -f "${WINEDIR}/files"/* "${WINEDIR}/"
-        rm -fr "${WINEDIR}/files"
-    elif [[ ! -d "${WINEDIR}/files" && -d "${WINEDIR}/dist" ]] ; then
-        for clear_dist_files in `ls "${WINEDIR}" | sed -e "s/^dist$//g" | sed -e "s/^version$//g"` ; do 
-            rm -fr "${WINEDIR}/$clear_dist_files"
-        done
-        mv -f "${WINEDIR}/dist"/* "${WINEDIR}/"
-        rm -fr "${WINEDIR}/dist"
-    elif [ -f "${WINEDIR}/proton_dist.tar" ] ; then
-        unpack_tar "${WINEDIR}/proton_dist.tar" "${WINEDIR}/"
-        for clear_dist_files in `ls "${WINEDIR}" | sed -e "s/^bin$//g" | sed -e "s/^lib$//g" | sed -e "s/^lib64$//g" | sed -e "s/^share$//g" | sed -e "s/^version$//g"` ; do 
-            rm -fr "${WINEDIR}/$clear_dist_files"
-        done
+    if [ ! -z "${LD_LIBRARY_PATH}" ]
+    then export LD_LIBRARY_PATH="${WINEDIR}/lib:${LD_LIBRARY_PATH}"
+    else export LD_LIBRARY_PATH="${WINEDIR}/lib"
     fi
+    export WINEDLLPATH="${WINEDIR}/lib/wine"
+    if [ -d "${WINEDIR}/lib/gstreamer-1.0" ] ; then
+        export GST_PLUGIN_SYSTEM_PATH_1_0="${WINEDIR}/lib/gstreamer-1.0"
+    fi
+    if [[ "${WINEARCH}" == "win64" ]] ; then
+        export LD_LIBRARY_PATH+=":${WINEDIR}/lib64"
+        export WINEDLLPATH+=":${WINEDIR}/lib64/wine"
+        if [ -d "${WINEDIR}/lib64/gstreamer-1.0" ] ; then
+        export GST_PLUGIN_SYSTEM_PATH_1_0+=":${WINEDIR}/lib64/gstreamer-1.0"
+        fi
+    fi
+    if [[ ! -z "${PATH_TO_GAME}" ]] ; then
+        export WINEDLLPATH+=":${PATH_TO_GAME}"
+    fi
+
     if [[ -d "${WINEDIR}" ]] ; then
         [[ ! -f "${WINEDIR}/version" ]] && echo "${PP_WINE_USE}" > "${WINEDIR}/version"
-
-        # if [[ -d "${WINEDIR}/lib32/" ]] ; then
-        #     mv -f "${WINEDIR}/lib" "${WINEDIR}/lib64"
-        #     mv -f "${WINEDIR}/lib32" "${WINEDIR}/lib"
-        # fi
 
         if [[ ! -d "${WINEDIR}/lib64/" && -d "${WINEDIR}/lib/wine/x86_64-unix" ]] ; then
             create_new_dir "${WINEDIR}/lib64/wine"
             mv -f "${WINEDIR}/lib/wine/x86_64-unix" "${WINEDIR}/lib64/wine/"
             mv -f "${WINEDIR}/lib/wine/x86_64-windows" "${WINEDIR}/lib64/wine/"
         fi
-
-        try_remove_file "${WINEDIR}/lib/libsteam_api.so"
-        try_remove_file "${WINEDIR}/lib64/libsteam_api.so"
         
         for mono_gecko_chk in "mono" "gecko" ; do
             if check_symlink "${WINEDIR}/share/wine/${mono_gecko_chk}" ; then
@@ -630,13 +598,13 @@ PP_check_and_download_plugins () {
 }
 
 PP_init_db () {
-    if [[ ! -z "${portwine_exe}" ]] ; then
-        export PORTWINE_DB=`echo "${portwine_exe}" | awk -F '/' 'NF>1{print $NF}' | sed s/".exe"/""/gi`
-        if [[ -f "${portwine_exe}".ppdb ]] && [[ "${PORTWINE_DB}" != "RiotClientServices" ]] ; then
-            export PORTWINE_DB_FILE="${portwine_exe}".ppdb
+    if [[ ! -z "${portproton_exe}" ]] ; then
+        export PORTWINE_DB=`echo "${portproton_exe}" | awk -F '/' 'NF>1{print $NF}' | sed s/".exe"/""/gi`
+        if [[ -f "${portproton_exe}".ppdb ]] && [[ "${PORTWINE_DB}" != "RiotClientServices" ]] ; then
+            export PORTWINE_DB_FILE="${portproton_exe}".ppdb
             . "${PORTWINE_DB_FILE}"
             if [[ -z "`ls -p "${PORT_PROTON_PATH}/prefixes/" | grep -e "^${PP_PREFIX_NAME}/"`" ]] ; then
-                export PP_PREFIX_NAME=`echo "${portwine_exe}" | awk -F"/prefixes/" '{print $2}' | awk -F"/" '{print $1}'`
+                export PP_PREFIX_NAME=`echo "${portproton_exe}" | awk -F"/prefixes/" '{print $2}' | awk -F"/" '{print $1}'`
                 edit_db_from_gui PP_PREFIX_NAME
             fi
         else
@@ -663,13 +631,13 @@ PP_init_db () {
             fi
             IFS="$orig_IFS"
             if [[ -f "${PP_FIND_DB_FILE}" ]] && [[ -z `grep "^export PP_DISABLED_CREATE_DB=1" "${PP_FIND_DB_FILE}"` ]] ; then
-                try_copy_file "${PP_FIND_DB_FILE}" "${portwine_exe}".ppdb
-                export PORTWINE_DB_FILE="${portwine_exe}".ppdb
+                try_copy_file "${PP_FIND_DB_FILE}" "${portproton_exe}".ppdb
+                export PORTWINE_DB_FILE="${portproton_exe}".ppdb
             fi
-            if [[ ! -z `echo "${portwine_exe}" | grep "/data/prefixes/"` ]] && \
-                [[ -z `echo "${portwine_exe}" | grep "/data/prefixes/DEFAULT/"` ]]
+            if [[ ! -z `echo "${portproton_exe}" | grep "/data/prefixes/"` ]] && \
+                [[ -z `echo "${portproton_exe}" | grep "/data/prefixes/DEFAULT/"` ]]
             then 
-                export PP_PREFIX_NAME=`echo "${portwine_exe}" | awk -F"/prefixes/" '{print $2}' | awk -F"/" '{print $1}'`
+                export PP_PREFIX_NAME=`echo "${portproton_exe}" | awk -F"/prefixes/" '{print $2}' | awk -F"/" '{print $1}'`
                 edit_db_from_gui PP_PREFIX_NAME
             fi
         fi
@@ -679,7 +647,7 @@ PP_init_db () {
             print_info "Use ${PORTWINE_DB_FILE} db file."
         fi
         if [ -z "$PATH_TO_GAME" ] ; then
-            export PATH_TO_GAME="$( cd "$( dirname "${portwine_exe}" )" >/dev/null 2>&1 && pwd )"
+            export PATH_TO_GAME="$( cd "$( dirname "${portproton_exe}" )" >/dev/null 2>&1 && pwd )"
         fi
     fi
     return 0
@@ -738,7 +706,7 @@ PP_port_update () {
                                 zenity --title="Changelog" --text-info --width=1200 --height=550 \
                                 --filename="${PORT_PROTON_PATH}/data/${PP_CHANGELOG_FILE}"
                             fi 
-                            [ "$?" == 0 ] && echo "Restarting PP after update..." && /usr/bin/env bash -c ${PP_full_command_line[*]} &
+                            [ "$?" == 0 ] && echo "Restarting PP after update..." && /usr/bin/env bash -c ${pp_full_command_line[*]} &
                             exit 0
                         fi
                     else
@@ -798,14 +766,14 @@ PP_create_gui_png () {
     if [ ! -z "${PORTWINE_CREATE_SHORTCUT_NAME}" ] ; then
         export PORTPROTON_NAME="${PORTWINE_CREATE_SHORTCUT_NAME}"
     else
-        export PORTPROTON_NAME="$(basename "${portwine_exe}" | sed s/".exe"/""/gi )"
+        export PORTPROTON_NAME="$(basename "${portproton_exe}" | sed s/".exe"/""/gi )"
     fi
     PP_RESIZE_TO=128
     try_remove_file "${PORT_PROTON_PATH}/data/img/setup.png"
     if [[ -x "`which wrestool 2>/dev/null`" ]] && [[ ! -f "${PORT_PROTON_PATH}/data/img/${PORTPROTON_NAME}.png" ]] ; then
         try_remove_dir "${PORT_PROTON_TMP_PATH}/tmp_img"
         create_new_dir "${PORT_PROTON_TMP_PATH}/tmp_img"
-        wrestool -x --output="${PORT_PROTON_TMP_PATH}/tmp_img/" -t14 "${portwine_exe}"
+        wrestool -x --output="${PORT_PROTON_TMP_PATH}/tmp_img/" -t14 "${portproton_exe}"
         cp "$(ls -S -1 "${PORT_PROTON_TMP_PATH}/tmp_img/"*".ico" | head -n 1)" "${PORT_PROTON_TMP_PATH}/tmp_img/${PORTPROTON_NAME}.ico"
         icotool -x --width=${PP_RESIZE_TO} --height=${PP_RESIZE_TO} --output="${PORT_PROTON_TMP_PATH}/tmp_img/" "${PORT_PROTON_TMP_PATH}/tmp_img/${PORTPROTON_NAME}.ico"
         if [[ ! -f "$(ls -S -1 "${PORT_PROTON_TMP_PATH}/tmp_img/"*".png" | grep "${PP_RESIZE_TO}x${PP_RESIZE_TO}")" ]] ; then 
@@ -856,7 +824,7 @@ PP_find_exe () {
     print_var YAD_STATUS
     if [[ "$YAD_STATUS" == "1" || "$YAD_STATUS" == "252" ]] ; then
         if [[ -z "${PP_SET_FIND_EXE}" ]] ; then
-            /usr/bin/env bash -c ${PP_full_command_line[*]} &
+            /usr/bin/env bash -c ${pp_full_command_line[*]} &
             echo "Restarting..."
         fi
         exit 0
@@ -864,9 +832,225 @@ PP_find_exe () {
     IFS=$OrigIFS
 
     if [[ -n "${PP_SET_FIND_EXE}" ]] ; then
-        portwine_exe="${PP_PATH_FOR_FIND}$(echo "${PP_SET_FIND_EXE}" | awk -F'|' '{print $1}')"
+        portproton_exe="${PP_PATH_FOR_FIND}$(echo "${PP_SET_FIND_EXE}" | awk -F'|' '{print $1}')"
         portwine_create_shortcut silent
-        /usr/bin/env bash -c ${PP_full_command_line[*]} &
+        /usr/bin/env bash -c ${pp_full_command_line[*]} &
         exit 0
     fi
 }
+
+pp_create_prefix_backup () {
+    cd "$HOME"
+    PP_PREFIX_TO_BACKUP=$(yad --file --directory --borders=5 --width=650 --height=500 --auto-close --center \
+    --window-icon="$PP_GUI_ICON_PATH/port_proton.png" --title "BACKUP PREFIX TO...")
+    YAD_STATUS="$?"
+    if [[ "$YAD_STATUS" == "1" || "$YAD_STATUS" == "252" ]] ; then exit 0 ; fi
+    if [[ -n "$(grep "/${PP_PREFIX_NAME}/" "${PORT_PROTON_PATH}"/*.desktop )" ]] ; then
+        try_remove_file "${PORT_PROTON_PATH}/data/prefixes/${PP_PREFIX_NAME}/.create_shortcut"
+        grep "/${PP_PREFIX_NAME}/" "${PORT_PROTON_PATH}"/*.desktop | awk -F"/${PP_PREFIX_NAME}/" '{print $2}' \
+        | awk -F\" '{print $1}' > "${PORT_PROTON_PATH}/data/prefixes/${PP_PREFIX_NAME}/.create_shortcut"
+    fi
+    xterm -e mksquashfs "${PORT_PROTON_PATH}/data/prefixes/${PP_PREFIX_NAME}" "${PP_PREFIX_TO_BACKUP}/${PP_PREFIX_NAME}.ppack.part" -comp zstd &
+    sleep 10
+    while true ; do
+        if [[ -n $(pgrep -a xterm | grep ".ppack.part" | head -n 1 | awk '{print $1}') ]] ; then
+            sleep 0.5
+        else
+            kill -TERM $(pgrep -a mksquashfs | grep ".ppack.part" | head -n 1 | awk '{print $1}')
+            sleep 0.3
+            if [[ -z "$(pgrep -a mksquashfs | grep ".ppack.part" | head -n 1 | awk '{print $1}')" ]]
+            then break
+            else sleep 0.3
+            fi
+        fi
+    done
+    if [[ -f "${PP_PREFIX_TO_BACKUP}/${PP_PREFIX_NAME}.ppack.part" ]] ; then
+        mv -f "${PP_PREFIX_TO_BACKUP}/${PP_PREFIX_NAME}.ppack.part" "${PP_PREFIX_TO_BACKUP}/${PP_PREFIX_NAME}.ppack"
+        zenity_info "Backup for prefix \"${PP_PREFIX_NAME}\" successfully created."
+    else 
+        zenity_error "An error occurred while creating a backup for prefix: \"${PP_PREFIX_NAME}\" !"
+    fi
+    return 0
+}
+
+portproton_launch () {
+    start_portproton
+    PORTWINE_MSI=$(basename "${portproton_exe}" | grep .msi)
+    PORTWINE_BAT=$(basename "${portproton_exe}" | grep .bat)
+    if [[ "${PP_VIRTUAL_DESKTOP}" == "1" ]] ; then
+        pp_screen_resolution=$(xrandr --current | grep "*" | awk '{print $1;}' | head -1)
+        pp_run explorer "/desktop=PortProton,${pp_screen_resolution}" ${WINE_WIN_START} "$portproton_exe"
+    elif [ -n "${PORTWINE_MSI}" ]; then
+        pp_run msiexec /i "$portproton_exe"
+    elif [[ -n "${PORTWINE_BAT}" || -n "${portproton_exe}" ]] ; then
+        pp_run ${WINE_WIN_START} "$portproton_exe"
+    else
+        pp_run winefile
+    fi
+}
+
+portwine_start_debug () {
+    kill_portwine
+    export PP_LOG=1
+    export PP_WINEDBG_DISABLE=0
+    echo "${port_deb1}" > "${PORT_PROTON_PATH}/${portname}.log"
+    echo "${port_deb2}" >> "${PORT_PROTON_PATH}/${portname}.log"
+    echo "-------------------------------------------------------------" >> "${PORT_PROTON_PATH}/${portname}.log"
+    echo "PortWINE version:" >> "${PORT_PROTON_PATH}/${portname}.log"
+    read install_ver < "${PORT_PROTON_TMP_PATH}/${portname}_ver"
+    echo "${portname}-${install_ver}" >> "${PORT_PROTON_PATH}/${portname}.log"
+    echo "------------------------------------------------------------" >> "${PORT_PROTON_PATH}/${portname}.log"
+    echo "Scripts version:" >> "${PORT_PROTON_PATH}/${portname}.log"
+    cat "${PORT_PROTON_TMP_PATH}/scripts_ver" >> "${PORT_PROTON_PATH}/${portname}.log"
+    echo "----------------------------------------------------------" >> "${PORT_PROTON_PATH}/${portname}.log"
+    if [ -n "${portproton_exe}" ] ; then
+        echo "Debug for programm:" >> "${PORT_PROTON_PATH}/${portname}.log"
+        echo "${portproton_exe}" >> "${PORT_PROTON_PATH}/${portname}.log"
+        echo "---------------------------------------------------------" >> "${PORT_PROTON_PATH}/${portname}.log"
+    fi
+    echo "GLIBC version:" >> "${PORT_PROTON_PATH}/${portname}.log"
+    echo $(ldd --version | grep -m1 ldd | awk '{print $NF}') >> "${PORT_PROTON_PATH}/${portname}.log"
+    echo "--------------------------------------------------------" >> "${PORT_PROTON_PATH}/${portname}.log"
+    if [[ "${PP_VULKAN_USE}" = "0" ]] ; then 
+        echo "PP_VULKAN_USE=${PP_VULKAN_USE} - DX9-11 to ${loc_gui_open_gl}" >> "${PORT_PROTON_PATH}/${portname}.log"
+    elif [[ "${PP_VULKAN_USE}" = "3" ]] ; then 
+        echo "PP_VULKAN_USE=${PP_VULKAN_USE} - native DX9 on MESA drivers" >> "${PORT_PROTON_PATH}/${portname}.log"
+    else 
+        echo "PP_VULKAN_USE=${PP_VULKAN_USE}" >> "${PORT_PROTON_PATH}/${portname}.log"
+    fi
+    echo "--------------------------------------------" >> "${PORT_PROTON_PATH}/${portname}.log"
+    echo "Version WINE in the Port:" >> "${PORT_PROTON_PATH}/${portname}.log"
+    print_var PP_WINE_USE >> "${PORT_PROTON_PATH}/${portname}.log"
+    [ -f "${WINEDIR}/version" ] && cat "${WINEDIR}/version" >> "${PORT_PROTON_PATH}/${portname}.log"
+    echo "------------------------------------------------------" >> "${PORT_PROTON_PATH}/${portname}.log"
+    echo "Date and time of start debug for ${portname}:" >> "${PORT_PROTON_PATH}/${portname}.log"
+    date >> "${PORT_PROTON_PATH}/${portname}.log"
+    echo "-----------------------------------------------------" >> "${PORT_PROTON_PATH}/${portname}.log"
+    echo "The installation path of the ${portname}:" >> "${PORT_PROTON_PATH}/${portname}.log"
+    echo "$PORT_PROTON_PATH" >> "${PORT_PROTON_PATH}/${portname}.log"
+    echo "----------------------------------------------------" >> "${PORT_PROTON_PATH}/${portname}.log"
+    echo "Operating system" >> "${PORT_PROTON_PATH}/${portname}.log"
+    lsb_release -d | sed s/Description/ОС/g >> "${PORT_PROTON_PATH}/${portname}.log"
+    echo "--------------------------------------------------" >> "${PORT_PROTON_PATH}/${portname}.log"
+    echo "Desktop environment:" >> "${PORT_PROTON_PATH}/${portname}.log"
+    echo "Desktop session: ${DESKTOP_SESSION}" >> "${PORT_PROTON_PATH}/${portname}.log"
+    echo "Current desktop: ${XDG_CURRENT_DESKTOP}" >> "${PORT_PROTON_PATH}/${portname}.log"
+    echo "Session type: ${XDG_SESSION_TYPE}" >> "${PORT_PROTON_PATH}/${portname}.log"
+    echo "--------------------------------------------------" >> "${PORT_PROTON_PATH}/${portname}.log"
+    echo "Kernel" >> "${PORT_PROTON_PATH}/${portname}.log"
+    uname -r >> "${PORT_PROTON_PATH}/${portname}.log"
+    echo "-------------------------------------------------" >> "${PORT_PROTON_PATH}/${portname}.log"
+    echo "CPU" >> "${PORT_PROTON_PATH}/${portname}.log"
+    cat /proc/cpuinfo | grep "model name" >> "${PORT_PROTON_PATH}/${portname}.log"
+    echo "------------------------------------------------" >> "${PORT_PROTON_PATH}/${portname}.log"
+    echo "RAM" >> "${PORT_PROTON_PATH}/${portname}.log"
+    free -m >> "${PORT_PROTON_PATH}/${portname}.log"
+    echo "-----------------------------------------------" >> "${PORT_PROTON_PATH}/${portname}.log"
+    echo "Graphic cards and drivers:" >> "${PORT_PROTON_PATH}/${portname}.log"
+    echo 'lspci -k | grep -EA3 VGA|3D|Display:' >> "${PORT_PROTON_PATH}/${portname}.log"
+    echo $(lspci -k | grep -EA3 'VGA|3D|Display') >> "${PORT_PROTON_PATH}/${portname}.log"
+    [[ `which glxinfo` ]] && glxinfo -B >> "${PORT_PROTON_PATH}/${portname}.log"
+    echo " " >> "${PORT_PROTON_PATH}/${portname}.log"
+    echo "inxi -G:" >> "${PORT_PROTON_PATH}/${portname}.log"
+    "${PP_WINELIB}/portable/bin/inxi" -G >> "${PORT_PROTON_PATH}/${portname}.log"
+    echo "----------------------------------------------" >> "${PORT_PROTON_PATH}/${portname}.log"
+    echo "Vulkan info device name:" >> "${PORT_PROTON_PATH}/${portname}.log"
+    [[ `which vulkaninfo` ]] && vulkaninfo | grep deviceName >> "${PORT_PROTON_PATH}/${portname}.log"
+    "${PP_WINELIB}/portable/bin/vkcube" --c 50
+    if [ $? -eq 0 ]; then
+        echo "Vulkan cube test passed successfully" >> "${PORT_PROTON_PATH}/${portname}.log"
+    else
+        echo "Vkcube test completed with error" >> "${PORT_PROTON_PATH}/${portname}.log"
+    fi
+    if [ ! -x "$(which gamemoderun 2>/dev/null)" ]
+    then
+        echo "---------------------------------------------" >> "${PORT_PROTON_PATH}/${portname}.log"
+        echo "!!!gamemod not found!!!"  >> "${PORT_PROTON_PATH}/${portname}.log"
+    fi
+    echo "-------------------------------------------" >> "${PORT_PROTON_PATH}/${portname}.log"
+    if [[ "${PP_USE_D3D_EXTRAS}" != 1 ]]
+    then echo "D3D_EXTRAS - disabled" >> "${PORT_PROTON_PATH}/${portname}.log"
+    else echo "D3D_EXTRAS - enabled" >> "${PORT_PROTON_PATH}/${portname}.log"
+    fi
+    echo "------------------------------------------" >> "${PORT_PROTON_PATH}/${portname}.log"
+    echo "winetricks.log:" >> "${PORT_PROTON_PATH}/${portname}.log"
+    cat "${PORT_PROTON_PATH}/data/prefixes/${PP_PREFIX_NAME}/winetricks.log" | sed -e /"^d3dcomp*"/d -e /"^d3dx*"/d >> "${PORT_PROTON_PATH}/${portname}.log"
+    echo "-----------------------------------------" >> "${PORT_PROTON_PATH}/${portname}.log"
+    if [ -n "${PORTWINE_DB_FILE}" ]; then
+        echo "Use ${PORTWINE_DB_FILE} db file:" >> "${PORT_PROTON_PATH}/${portname}.log"
+        cat "${PORTWINE_DB_FILE}" | sed '/##/d' >> "${PORT_PROTON_PATH}/${portname}.log"
+    else
+        echo "Use ${PORT_PROTON_SCRIPTS_PATH}/portwine_db/default db file:" >> "${PORT_PROTON_PATH}/${portname}.log"
+        cat "${PORT_PROTON_SCRIPTS_PATH}/portwine_db/default" | sed '/##/d' >> "${PORT_PROTON_PATH}/${portname}.log"
+    fi
+    echo "----------------------------------------" >> "${PORT_PROTON_PATH}/${portname}.log"
+    if [ -f "${USER_CONF}" ]; then
+        cat "${USER_CONF}" | sed '/bash/d' >> "${PORT_PROTON_PATH}/${portname}.log"
+    fi
+    echo "---------------------------------------" >> "${PORT_PROTON_PATH}/${portname}.log"
+
+    portproton_launch 
+    kill_portwine
+    deb_text=$(cat "${PORT_PROTON_PATH}/${portname}.log"  | awk '! a[$0]++') 
+    echo "$deb_text" > "${PORT_PROTON_PATH}/${portname}.log"
+    stop_portwine
+}
+
+pp_winecfg () {
+    start_portproton
+    pp_run winecfg
+}
+
+pp_winefile () {
+    start_portproton
+    pp_run winefile
+}
+
+pp_winecmd () {
+    export PP_USE_TERMINAL=1
+    start_portproton
+    cd "${PORT_PROTON_PATH}/data/prefixes/${PP_PREFIX_NAME}/drive_c"
+    xterm -e "${WINELOADER}" cmd
+    stop_portwine
+}
+
+pp_winereg () {
+    start_portproton
+    pp_run regedit
+}
+
+
+
+pp_edit_db () {
+    PP_gui_for_edit_db \
+    PP_MANGOHUD PP_MANGOHUD_USER_CONF ENABLE_VKBASALT PP_NO_ESYNC PP_NO_FSYNC PP_USE_DXR10 PP_USE_DXR11 \
+    PP_USE_NVAPI_AND_DLSS PP_USE_FAKE_DLSS PP_WINE_FULLSCREEN_FSR PP_HIDE_NVIDIA_GPU PP_VIRTUAL_DESKTOP PP_USE_TERMINAL \
+    PP_GUI_DISABLED_CS PP_USE_GAMEMODE PP_DX12_DISABLE PP_PRIME_RENDER_OFFLOAD PP_USE_D3D_EXTRAS PP_FIX_VIDEO_IN_GAME \
+    PP_USE_GSTREAMER PP_FORCE_LARGE_ADDRESS_AWARE PP_USE_SHADER_CACHE PP_USE_WINE_DXGI
+    if [ "$?" == 0 ] ; then
+        echo "Restarting PP after update ppdb file..."
+        /usr/bin/env bash -c ${pp_full_command_line[*]} &
+        exit 0
+    fi
+    # PP_WINE_ALLOW_XIM PP_FORCE_USE_VSYNC PP_WINEDBG_DISABLE PP_USE_AMDVLK_DRIVER
+}
+
+PP_autoinstall_from_db () {
+    export PP_USER_TEMP="${PORT_PROTON_TMP_PATH}"
+    export PP_FORCE_LARGE_ADDRESS_AWARE=0
+    export PP_USE_GAMEMODE=0
+    export PP_CHECK_AUTOINSTAL=1
+    export PP_GUI_DISABLED_CS=1
+    export PP_WINEDBG_DISABLE=1
+    export PP_NO_WRITE_WATCH=0
+    export PP_VULKAN_USE=0
+    export PP_NO_FSYNC=1
+    export PP_NO_ESYNC=1
+    unset PORTWINE_CREATE_SHORTCUT_NAME
+    export PP_DISABLED_CREATE_DB=1
+    export PP_MANGOHUD=0
+    export ENABLE_VKBASALT=0
+    export PP_USE_D3D_EXTRAS=1
+    . "${PORT_PROTON_SCRIPTS_PATH}/PP_autoinstall/${PP_YAD_SET}"
+}
+

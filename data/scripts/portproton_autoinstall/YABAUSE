@@ -1,0 +1,19 @@
+#!/usr/bin/env bash
+# Author: chal55rus (Sergey P.)
+########################################################################
+export LAUNCH_PARAMETERS=("/S")
+export PP_AUTOINSTALL_EXE="${PP_USER_TEMP}/yabause-0.9.15-win64.exe"
+start_portproton
+if try_download "download.tuxfamily.org/yabause/releases/0.9.15/yabause-0.9.15-win64.exe" "${PP_AUTOINSTALL_EXE}"
+then
+    PP_start_progress_bar_block "${loc_gui_installing_the} Yabause. ${loc_gui_please_wait} "
+    pp_run "${PP_AUTOINSTALL_EXE}"
+    portproton_exe="$WINEPREFIX/drive_c/Program Files/yabause 0.9.15/yabause.exe"
+    try_remove_file "${PP_AUTOINSTALL_EXE}"
+    try_remove_file "${portproton_exe}.ppdb"
+    kill_portwine
+    PP_stop_progress_bar
+    export PORTWINE_CREATE_SHORTCUT_NAME="Yabause"
+    portwine_create_shortcut
+fi
+stop_portwine

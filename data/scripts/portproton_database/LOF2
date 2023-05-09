@@ -28,4 +28,4 @@ export PULSE_LATENCY_MSEC=120                    # Fix crackling audio in games
 ##export VKD3D_CONFIG=force_bindless_texel_buffer
 ##export PP_WINDOWS_VER=10                      # Set windows version 10, 7 or XP
 ##export PP_VIRTUAL_DESKTOP=1
-##add_in_start_portwine () { commands ; }
+##add_in_start_portproton () { commands ; }

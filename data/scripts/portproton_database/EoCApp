@@ -30,4 +30,4 @@ export PP_WINE_ALLOW_XIM=0
 export PP_WINEDBG_DISABLE=0
 export PP_USE_TERMINAL=0
 export PP_GUI_DISABLED_CS=0
-##add_in_start_portwine () { commands ; }
+##add_in_start_portproton () { commands ; }

@@ -28,15 +28,15 @@ try_download_caliber () {
     [ "${PIPESTATUS[0]}" != 0 ] && print_error "failed to download $1. Scipping." && return 1 || return 0
 }
 
-start_portwine
+start_portproton
 if try_download_caliber "https://cdn.playcaliber.com/p1/a88c3b70f76a0e56b1e08b62c9895cfe/launcher/setup/CaliberSetup.exe" "${PP_AUTOINSTALL_EXE}"
 then
     PP_start_progress_bar_block "${loc_gui_installing_the} CALIBER. ${loc_gui_please_wait} "
     PP_kill_autostart VC_redist.x64.exe 3 &
-    PP_run "${PP_AUTOINSTALL_EXE}"
-    portwine_exe="$WINEPREFIX/drive_c/Program Files (x86)/1C Game Studios/Caliber/Launcher.exe"
+    pp_run "${PP_AUTOINSTALL_EXE}"
+    portproton_exe="$WINEPREFIX/drive_c/Program Files (x86)/1C Game Studios/Caliber/Launcher.exe"
     try_remove_file "${PP_AUTOINSTALL_EXE}"
-    try_remove_file "${portwine_exe}.ppdb"
+    try_remove_file "${portproton_exe}.ppdb"
     kill_portwine
     PP_stop_progress_bar
     export PORTWINE_CREATE_SHORTCUT_NAME="CALIBER"

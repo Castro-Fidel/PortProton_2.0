@@ -36,4 +36,4 @@ export PP_FORCE_DISABLED_GAMEMOD=1              # Force disabele gamemod
 ##export PP_USE_TERMINAL=0                        # Force run in terminal
 ##export PP_LOG=0                                 # Enable debug mode fo terminal 
 ##export PP_GUI_DISABLED_CS=1                     # 1 = disabled GUI 
-##add_in_start_portwine () { commands ; }
+##add_in_start_portproton () { commands ; }

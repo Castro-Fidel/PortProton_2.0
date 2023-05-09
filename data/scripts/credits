@@ -340,7 +340,7 @@ yad --title "О НАС" --key="${KEY_CREDITS}" --window-icon="$PP_GUI_ICON_PATH/
 --tab="О PORTPROTON" --tab="АВТОРЫ" --tab="ЛИЦЕНЗИЯ" --tab="СПОНСОРЫ" --tab="ПРИСОЕДИНИТЬСЯ" \
 --tab="БИБЛИОТЕКИ"
     echo "Exit from credits"
-    /usr/bin/env bash -c ${PP_full_command_line[*]} 
+    /usr/bin/env bash -c ${pp_full_command_line[*]} 
 
 else
 
@@ -680,5 +680,5 @@ yad --title "ABOUT US" --key="${KEY_CREDITS}" --window-icon="$PP_GUI_ICON_PATH/p
 --tab="THIRD PARTY LIBRARIES"
 
     echo "Exit from credits"
-    /usr/bin/env bash -c ${PP_full_command_line[*]} 
+    /usr/bin/env bash -c ${pp_full_command_line[*]} 
 fi
