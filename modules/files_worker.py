@@ -88,15 +88,16 @@ def try_remove_dir(path):
         except Exception as e:
             log.error(f"failed to remove directory: {e}")
 
-def get_last_modified_time(file_path): # функция получения времени последнего изменения файла
+def get_last_modified_time(file_path, fallback=None):  # Добавьте fallback как необязательный параметр
     try:
         return os.path.getmtime(file_path)
     except FileNotFoundError:
         log.warning(f"Файл не найден: {file_path}")
-        return None
+        return fallback  # Возврат значения по умолчанию
     except Exception as e:
         log.error(f"Ошибка при получении времени изменения файла {file_path}: {e}")
-        return None
+        return fallback  # Возврат значения по умолчанию
+
 
 
 def unpack(archive_path, extract_to=None):

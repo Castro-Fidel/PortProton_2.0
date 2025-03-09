@@ -12,6 +12,8 @@ from modules.source_fetcher import *
 
 tmp_path = tempfile.gettempdir() + "/portproton"
 
+mirror = True
+
 work_path = get_env_var("USER_WORK_PATH")
 
 data_path = work_path + "/data"
@@ -35,7 +37,7 @@ if __name__ == "__main__":
             case "--get-wine": 
                 # без аргументов сохраняем список доступных в tmp_path/get_wine.tmp и выводим в терминал
                 # если есть аргумент (например WINE_LG_10-1) то обновляем и парсим tmp_path/get_wine.tmp с последующим скачиванием
-                get_sources(sys.argv[2:], tmp_path, dist_path)
+                get_sources(sys.argv[2:], tmp_path, dist_path, mirror)
             case "--get-dxvk":
                 # без аргументов сохраняем список доступных в tmp_path/get_dxvk.tmp и выводим в терминал
                 # если есть аргумент (например 2.5.3-31) то обновляем и парсим tmp_path/get_dxvk.tmp с последующим скачиванием
